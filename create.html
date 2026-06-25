@@ -204,21 +204,18 @@
       100% { box-shadow:0 0 0 0 rgba(225,29,72,0); }
     }
 
-    /* ── 录屏入口：输入框内浮层引导提示 ── */
+    /* ── 录屏入口：底部工具栏轻量文字引导（填充中间空白） ── */
     .cw-record-hint {
-      position:absolute; left:22px; right:22px; bottom:64px; z-index:2;
-      display:flex; align-items:center; gap:10px;
-      padding:10px 14px; border-radius:12px;
-      border:1px dashed #f0c8cb; background:rgba(255,247,248,.92);
-      color:#666; font-size:13px; cursor:pointer; text-align:left;
-      transition:border-color .15s, background .15s, box-shadow .15s;
+      display:inline-flex; align-items:center; gap:6px;
+      margin-left:10px;
+      border:none; background:transparent; cursor:pointer;
+      color:#999; font-size:13px; white-space:nowrap;
+      transition:color .15s;
     }
-    .cw-record-hint:hover { border-color:#E11D48; background:#fff; box-shadow:0 4px 14px rgba(225,29,72,.10); }
-    .cw-record-hint > i:first-child { color:#E11D48; font-size:14px; flex-shrink:0; }
-    .cw-record-hint > span { flex:1; }
+    .cw-record-hint:hover { color:#666; }
     .cw-record-hint b { color:#E11D48; font-weight:600; }
-    .cw-record-hint > i:last-child { color:#E11D48; font-size:12px; flex-shrink:0; opacity:.7; transition:transform .15s; }
-    .cw-record-hint:hover > i:last-child { transform:translateX(3px); opacity:1; }
+    .cw-record-hint i { color:#E11D48; font-size:11px; opacity:.7; transition:transform .15s; }
+    .cw-record-hint:hover i { transform:translateX(3px); opacity:1; }
     .cw-record-hint.hidden { display:none; }
 
     /* ── 录屏面板：返回文字描述链接 ── */
@@ -807,12 +804,6 @@
               <div id="cwOptAfter"></div>
             </div>
           </div>
-          <!-- 录屏入口：空状态浮层引导提示 -->
-          <button class="cw-record-hint" id="cwRecordHint">
-            <i class="fas fa-video"></i>
-            <span>不想打字？<b>录屏演示一遍</b>，AI 自动生成技能</span>
-            <i class="fas fa-arrow-right"></i>
-          </button>
           <div class="cw-bottom">
             <div class="cw-add-wrap">
               <button class="cw-icon-btn" id="cwAddBtn"><i class="fas fa-plus"></i></button>
@@ -826,6 +817,10 @@
             <!-- 录屏入口：强调药丸按钮 -->
             <button class="cw-record-pill" id="cwRecordBtn" title="录屏演示，自动生成技能">
               <span class="cw-rec-dot"></span> 录屏生成
+            </button>
+            <!-- 录屏入口：底部轻量文字引导（填充中间空白） -->
+            <button class="cw-record-hint" id="cwRecordHint">
+              不想打字？<b>录屏演示一遍</b>，AI 自动生成 <i class="fas fa-arrow-right"></i>
             </button>
             <input type="file" id="cwLocalFile" style="display:none">
             <input type="file" id="cwZipFile" style="display:none" accept=".zip">
