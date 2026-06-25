@@ -174,12 +174,13 @@
 
     /* tab 内容区 */
     .cw-tab-content { display: none; }
-    .cw-tab-content.active { display: block; }
+    /* 四个 tab 内容区高度统一，切换时卡片不跳动 */
+    .cw-tab-content.active { display: block; min-height: 176px; }
 
-    /* 占位 */
+    /* 占位：在统一高度内垂直居中 */
     .cw-placeholder {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 12px; padding: 64px 0; color: #bbb; font-size: 14px;
+      gap: 12px; min-height: 176px; color: #bbb; font-size: 14px;
     }
     .cw-placeholder i { font-size: 32px; }
 
@@ -774,14 +775,14 @@
           <button class="cw-type-tab active" data-type="skills">
             <i class="fas fa-sliders-h" style="font-size:11px"></i> 技能
           </button>
-          <button class="cw-type-tab" data-type="agent">
-            <i class="fas fa-robot" style="font-size:11px"></i> 智能体
-          </button>
           <button class="cw-type-tab" data-type="plugins">
             <i class="fas fa-plug" style="font-size:11px"></i> 插件
           </button>
           <button class="cw-type-tab" data-type="connector">
             <i class="fas fa-link" style="font-size:11px"></i> 连接器
+          </button>
+          <button class="cw-type-tab" data-type="prompt">
+            <i class="fas fa-align-left" style="font-size:11px"></i> 提示词
           </button>
         </div>
 
@@ -1019,14 +1020,14 @@
         </div><!-- /cw-tab-content skills -->
 
         <!-- ── 其他 Tab 占位内容 ── -->
-        <div class="cw-tab-content" id="tabContentAgent">
-          <div class="cw-placeholder"><i class="fas fa-robot"></i><span>智能体创建功能即将上线</span></div>
-        </div>
         <div class="cw-tab-content" id="tabContentPlugins">
           <div class="cw-placeholder"><i class="fas fa-plug"></i><span>插件管理功能即将上线</span></div>
         </div>
         <div class="cw-tab-content" id="tabContentConnector">
           <div class="cw-placeholder"><i class="fas fa-link"></i><span>连接器配置功能即将上线</span></div>
+        </div>
+        <div class="cw-tab-content" id="tabContentPrompt">
+          <div class="cw-placeholder"><i class="fas fa-align-left"></i><span>提示词管理功能即将上线</span></div>
         </div>
 
       </div><!-- /cw-card -->
@@ -1100,9 +1101,9 @@ document.querySelectorAll('.cw-hitem').forEach(item => {
 // ══════════════════════════════════════════════════════════
 const TYPE_TAB_MAP = {
   skills:    'tabContentSkills',
-  agent:     'tabContentAgent',
   plugins:   'tabContentPlugins',
   connector: 'tabContentConnector',
+  prompt:    'tabContentPrompt',
 };
 document.querySelectorAll('.cw-type-tab').forEach(tab => {
   tab.addEventListener('click', () => {
