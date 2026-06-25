@@ -45,14 +45,11 @@
     .cw-hitem i { font-size:11px; color:#999; flex-shrink:0; }
     .cw-hitem span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-    /* 主编辑区 */
+    /* 主编辑区 — 纯灰底，无点阵 */
     .cw-main {
       flex:1; min-width:0; display:flex; flex-direction:column;
       align-items:center; padding-top:72px; overflow-y:auto;
-      /* 点阵背景，参照截图 */
-      background-image: radial-gradient(circle, #d0d3db 1px, transparent 1px);
-      background-size: 22px 22px;
-      background-color: #f0f1f5;
+      background:#f0f1f5;
     }
     .cw-title {
       font-size:34px; font-weight:800; color:#111; margin-bottom:36px;
@@ -140,15 +137,37 @@
     /* ── 文字模式 ────────────────────────────────────────── */
     #textMode { width:100%; display:flex; flex-direction:column; align-items:stretch; }
 
-    /* 输入框 — 嵌在白卡内，无外边框 */
+    /* 输入框 — 点阵背景 + 上下渐变蒙层 */
     .cw-composer {
       width: 100%;
       min-height:140px; max-height:320px;
       border: none; border-radius: 0;
-      display:flex; flex-direction:column; background:#fff;
+      display:flex; flex-direction:column;
       overflow:hidden; position:relative; transition:max-height .2s;
+      /* 点阵背景 */
+      background-color: #fafafa;
+      background-image: radial-gradient(circle, #d4d7df 1px, transparent 1px);
+      background-size: 22px 22px;
     }
     .cw-composer:focus-within { box-shadow: none; }
+    /* 上下渐变蒙层，让点阵向边缘淡出 */
+    .cw-composer::before,
+    .cw-composer::after {
+      content: '';
+      position: absolute; left: 0; right: 0; z-index: 1;
+      pointer-events: none;
+    }
+    .cw-composer::before {
+      top: 0; height: 52px;
+      background: linear-gradient(to bottom, #fafafa 0%, transparent 100%);
+    }
+    .cw-composer::after {
+      bottom: 0; height: 52px;
+      background: linear-gradient(to top, #fafafa 0%, transparent 100%);
+    }
+    /* textarea 和 hint 需要在蒙层之上 */
+    .cw-tab-hint, .cw-textarea, .cw-opt-view { position: relative; z-index: 2; }
+    .cw-bottom { position: relative; z-index: 2; background: #fff; }
     .cw-tab-hint {
       position:absolute; top:20px; left:22px;
       display:flex; align-items:center; gap:8px;
@@ -165,7 +184,7 @@
       flex:1; border:none; resize:none; outline:none;
       padding:20px 22px; font-size:15px; color:#111;
       line-height:1.6; font-family:inherit; min-height:120px;
-      background:transparent;
+      background: transparent;
     }
     .cw-textarea::placeholder { color:transparent; }
     .cw-opt-view {
@@ -238,8 +257,13 @@
       cursor:pointer; transition:background .15s;
     }
 
-    /* 案例区 */
-    .cw-examples { width:100%; margin-top:0; padding: 20px 20px 32px; box-sizing:border-box; }
+    /* 案例区 — 独立于卡片，卡片下方 */
+    .cw-examples {
+      width: min(780px, calc(100% - 80px));
+      margin-top: 0;
+      padding: 28px 0 48px;
+      box-sizing: border-box;
+    }
     .cw-ex-header { display:flex; align-items:center; gap:0; margin-bottom:14px; border-bottom:1px solid #eceef2; }
     .cw-ex-tab {
       font-size:13px; font-weight:500; color:#999;
@@ -736,19 +760,6 @@
           </div>
         </div>
 
-        <!-- 案例区 -->
-        <div class="cw-examples">
-          <div class="cw-ex-header">
-            <div class="cw-ex-tab active" data-tab="showcase">优秀 Skill 案例</div>
-            <div class="cw-ex-tab" data-tab="recent">最近编辑</div>
-          </div>
-          <div id="showcasePane">
-            <div class="cw-ex-grid" id="exGrid"></div>
-          </div>
-          <div id="recentPane" style="display:none">
-            <div class="rc-grid" id="rcGrid"></div>
-          </div>
-        </div>
       </div>
 
       <!-- ══ 录屏模式 ══════════════════════════════════════ -->
@@ -942,6 +953,20 @@
         </div>
 
       </div><!-- /cw-card -->
+
+      <!-- 案例区 — 独立于卡片，位于卡片下方 -->
+      <div class="cw-examples" id="cwExamplesBlock">
+        <div class="cw-ex-header">
+          <div class="cw-ex-tab active" data-tab="showcase">优秀 Skill 案例</div>
+          <div class="cw-ex-tab" data-tab="recent">最近编辑</div>
+        </div>
+        <div id="showcasePane">
+          <div class="cw-ex-grid" id="exGrid"></div>
+        </div>
+        <div id="recentPane" style="display:none">
+          <div class="rc-grid" id="rcGrid"></div>
+        </div>
+      </div>
 
     </section>
   </div>
