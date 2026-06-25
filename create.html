@@ -129,8 +129,7 @@
     .cw-type-tabs {
       display: flex; align-items: center;
       background: #f5f6fa;
-      border-bottom: 1px solid #eceef2;
-      padding: 0 4px;
+      padding: 0;
       gap: 0;
       border-radius: 20px 20px 0 0;
     }
@@ -140,27 +139,38 @@
       font-size: 13.5px; font-weight: 500; color: #888;
       cursor: pointer;
       border: none; background: transparent;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
-      transition: color .15s, border-color .15s, background .15s;
+      transition: color .15s, background .15s;
       white-space: nowrap; line-height: 1;
+      position: relative;
+      border-radius: 12px 12px 0 0;
     }
     .cw-type-tab i { font-size: 12px; }
-    .cw-type-tab:hover { color: #333; background: rgba(0,0,0,.03); }
+    .cw-type-tab:not(.active):hover { color: #333; }
+    /* 选中态：白卡，顶部圆角，底部两侧用伪元素做反向圆角平滑融入灰底 */
     .cw-type-tab.active {
       color: #111; font-weight: 700;
       background: #fff;
-      border-bottom-color: transparent;
-      border-top: 2px solid transparent;
-      box-shadow: none;
-      position: relative;
+      z-index: 2;
     }
-    /* 截图：active tab 是白色底，其他是灰色底，整体横排 */
+    /* 左下角反向圆角 */
+    .cw-type-tab.active::before {
+      content: '';
+      position: absolute; bottom: 0; left: -10px;
+      width: 10px; height: 10px;
+      background: radial-gradient(circle at top left, transparent 10px, #fff 10px);
+    }
+    /* 右下角反向圆角 */
     .cw-type-tab.active::after {
       content: '';
-      position: absolute; bottom: -1px; left: 0; right: 0;
-      height: 1px; background: #fff;
+      position: absolute; bottom: 0; right: -10px;
+      width: 10px; height: 10px;
+      background: radial-gradient(circle at top right, transparent 10px, #fff 10px);
     }
+    /* 第一个 tab 选中时：左侧无凹角，左上圆角与卡片对齐 */
+    .cw-type-tab.active:first-child {
+      border-top-left-radius: 20px;
+    }
+    .cw-type-tab.active:first-child::before { display: none; }
 
     /* tab 内容区 */
     .cw-tab-content { display: none; }
