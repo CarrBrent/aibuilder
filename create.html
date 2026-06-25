@@ -48,25 +48,88 @@
     /* 主编辑区 */
     .cw-main {
       flex:1; min-width:0; display:flex; flex-direction:column;
-      align-items:center; padding-top:80px; overflow-y:auto;
+      align-items:center; padding-top:72px; overflow-y:auto;
+      /* 点阵背景，参照截图 */
+      background-image: radial-gradient(circle, #d0d3db 1px, transparent 1px);
+      background-size: 22px 22px;
+      background-color: #f0f1f5;
     }
-    .cw-title { font-size:32px; font-weight:700; color:#111; margin-bottom:10px; letter-spacing:-.5px; }
-    .cw-subtitle { color:#999; font-size:15px; margin-bottom:24px; }
+    .cw-title {
+      font-size:34px; font-weight:800; color:#111; margin-bottom:36px;
+      letter-spacing:-.5px; text-align:center; line-height:1.25;
+    }
 
-    /* ── 模式切换 ────────────────────────────────────────── */
+    /* ── 白卡容器（包住 tab + composer）── */
+    .cw-card {
+      width: min(780px, calc(100% - 80px));
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 32px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06);
+      overflow: hidden;
+      margin-bottom: 36px;
+    }
+
+    /* ── 类型 Tab 栏（截图样式：浅灰背景横排）── */
+    .cw-type-tabs {
+      display: flex; align-items: center;
+      background: #f5f6fa;
+      border-bottom: 1px solid #eceef2;
+      padding: 0 4px;
+      gap: 0;
+    }
+    .cw-type-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 13px 22px 12px;
+      font-size: 13.5px; font-weight: 500; color: #888;
+      cursor: pointer;
+      border: none; background: transparent;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s, border-color .15s, background .15s;
+      white-space: nowrap; line-height: 1;
+    }
+    .cw-type-tab i { font-size: 12px; }
+    .cw-type-tab:hover { color: #333; background: rgba(0,0,0,.03); }
+    .cw-type-tab.active {
+      color: #111; font-weight: 700;
+      background: #fff;
+      border-bottom-color: transparent;
+      border-top: 2px solid transparent;
+      box-shadow: none;
+      position: relative;
+    }
+    /* 截图：active tab 是白色底，其他是灰色底，整体横排 */
+    .cw-type-tab.active::after {
+      content: '';
+      position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 1px; background: #fff;
+    }
+
+    /* tab 内容区 */
+    .cw-tab-content { display: none; }
+    .cw-tab-content.active { display: block; }
+
+    /* 占位 */
+    .cw-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; padding: 64px 0; color: #bbb; font-size: 14px;
+    }
+    .cw-placeholder i { font-size: 32px; }
+
+    /* ── 模式切换（文字描述 / 录屏生成）── */
     .cw-mode-tabs {
       display:flex; gap:6px;
-      margin-bottom:20px;
+      padding: 16px 20px 0;
     }
     .cw-mode-tab {
       display:flex; align-items:center; gap:6px;
       padding:7px 18px; border-radius:20px; border:1px solid #eceef2;
-      font-size:13px; font-weight:500; color:#555;
+      font-size:13px; font-weight:500; color:#888;
       cursor:pointer; background:#f5f6fa;
       transition:background .15s, color .15s, border-color .15s;
     }
     .cw-mode-tab i { font-size:12px; }
-    .cw-mode-tab:hover { color:#111; border-color:#bbb; background:#fff; }
+    .cw-mode-tab:hover { color:#333; border-color:#ccc; background:#eee; }
     .cw-mode-tab.active {
       background:#111; color:#fff; font-weight:600; border-color:#111;
     }
@@ -75,17 +138,17 @@
     .cw-mode-tab.active.record-tab i { color:#fff; }
 
     /* ── 文字模式 ────────────────────────────────────────── */
-    #textMode { width:100%; display:flex; flex-direction:column; align-items:center; }
+    #textMode { width:100%; display:flex; flex-direction:column; align-items:stretch; }
 
-    /* 输入框 */
+    /* 输入框 — 嵌在白卡内，无外边框 */
     .cw-composer {
-      width:min(860px,calc(100% - 120px));
-      min-height:160px; max-height:360px;
-      border:1px solid #eceef2; border-radius:16px;
+      width: 100%;
+      min-height:140px; max-height:320px;
+      border: none; border-radius: 0;
       display:flex; flex-direction:column; background:#fff;
       overflow:hidden; position:relative; transition:max-height .2s;
     }
-    .cw-composer:focus-within { border-color:#bbb; box-shadow:0 4px 18px rgba(0,0,0,.08); }
+    .cw-composer:focus-within { box-shadow: none; }
     .cw-tab-hint {
       position:absolute; top:20px; left:22px;
       display:flex; align-items:center; gap:8px;
@@ -122,8 +185,9 @@
     }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
     .cw-bottom {
-      height:52px; display:flex; align-items:center;
+      height:56px; display:flex; align-items:center;
       gap:10px; padding:0 18px;
+      border-top: 1px solid #eceef2;
     }
     .cw-icon-btn {
       width:30px; height:30px; border-radius:8px; border:1px solid #eceef2;
@@ -149,6 +213,13 @@
     .cw-dropdown-item:hover { background:#f5f6fa; }
     .cw-dropdown-item i { width:14px; text-align:center; color:#999; font-size:12px; }
     .cw-right-btns { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .cw-auto-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:6px 12px; border-radius:20px; border:1px solid #eceef2;
+      background:#fff; color:#555; font-size:13px; font-weight:500;
+      cursor:pointer; transition:border-color .15s, background .15s;
+    }
+    .cw-auto-btn:hover { border-color:#bbb; background:#f5f6fa; }
     .cw-opt-actions { display:flex; align-items:center; gap:6px; }
     .cw-opt-actions.hidden { display:none; }
     .cw-optimize-btn {
@@ -168,7 +239,7 @@
     }
 
     /* 案例区 */
-    .cw-examples { width:min(860px,calc(100% - 120px)); margin-top:32px; padding-bottom:48px; }
+    .cw-examples { width:100%; margin-top:0; padding: 20px 20px 32px; box-sizing:border-box; }
     .cw-ex-header { display:flex; align-items:center; gap:0; margin-bottom:14px; border-bottom:1px solid #eceef2; }
     .cw-ex-tab {
       font-size:13px; font-weight:500; color:#999;
@@ -222,9 +293,9 @@
 
     /* ── 录屏模式 ────────────────────────────────────────── */
     #recordMode {
-      width:min(680px,calc(100% - 120px));
+      width:100%;
       display:none; flex-direction:column;
-      padding-bottom:64px;
+      padding:20px 20px 40px; box-sizing:border-box;
     }
     #recordMode.active { display:flex; }
 
@@ -590,22 +661,39 @@
 
     <!-- 主区域 -->
     <section class="cw-main" id="cwMain">
-      <h1 class="cw-title">Skill Builder 企业版</h1>
-      <div class="cw-subtitle">选择方式，创建你的专属 Skill</div>
+      <h1 class="cw-title">扣子编程，你的 AI 开发伙伴已就位</h1>
 
-      <!-- 模式切换 -->
-      <div class="cw-mode-tabs">
-        <button class="cw-mode-tab active" data-mode="text">
-          <i class="fas fa-keyboard"></i> 文字描述
-        </button>
-        <button class="cw-mode-tab record-tab" data-mode="record">
-          <i class="fas fa-video"></i> 录屏生成
-        </button>
-      </div>
+      <!-- 白卡容器 -->
+      <div class="cw-card">
 
-      <!-- ══ 文字模式 ══════════════════════════════════════ -->
-      <div id="textMode">
-        <div class="cw-composer" id="cwComposer">
+        <!-- 类型切换 Tab -->
+        <div class="cw-type-tabs" id="cwTypeTabs">
+          <button class="cw-type-tab" data-type="webapp">网页应用</button>
+          <button class="cw-type-tab" data-type="mobile">移动应用</button>
+          <button class="cw-type-tab" data-type="miniapp">小程序</button>
+          <button class="cw-type-tab" data-type="agent">智能体</button>
+          <button class="cw-type-tab" data-type="workflow">工作流</button>
+          <button class="cw-type-tab active" data-type="skills">
+            <i class="fas fa-sliders-h" style="font-size:11px"></i> 技能
+          </button>
+        </div>
+
+        <!-- ── Skills Tab 内容（模式切换 + 输入框）── -->
+        <div class="cw-tab-content active" id="tabContentSkills">
+
+          <!-- 模式切换 -->
+          <div class="cw-mode-tabs">
+            <button class="cw-mode-tab active" data-mode="text">
+              <i class="fas fa-keyboard"></i> 文字描述
+            </button>
+            <button class="cw-mode-tab record-tab" data-mode="record">
+              <i class="fas fa-video"></i> 录屏生成
+            </button>
+          </div>
+
+          <!-- ══ 文字模式 ══════════════════════════════════════ -->
+          <div id="textMode">
+            <div class="cw-composer" id="cwComposer">
           <div class="cw-tab-hint" id="cwHint">
             <span class="cw-tab-key">Tab</span>
             <span class="cw-tab-text" id="cwHintText">帮我做一个写作框架技能，可以生成深入浅出的文章</span>
@@ -639,6 +727,10 @@
                 <button class="cw-icon-btn" id="cwCancelOpt" title="取消优化"><i class="fas fa-times"></i></button>
               </div>
               <button class="cw-optimize-btn hidden" id="cwOptBtn"><i class="fas fa-magic"></i> 一键优化</button>
+              <!-- Auto 下拉 -->
+              <button class="cw-auto-btn" id="cwAutoBtn">Auto <i class="fas fa-chevron-down" style="font-size:10px"></i></button>
+              <!-- 麦克风 -->
+              <button class="cw-icon-btn" title="语音输入"><i class="fas fa-microphone" style="color:#888"></i></button>
               <button class="cw-send" id="cwSend"><i class="fas fa-arrow-up"></i></button>
             </div>
           </div>
@@ -829,6 +921,28 @@
         </div>
 
       </div><!-- /recordMode -->
+
+        </div><!-- /cw-tab-content skills -->
+
+        <!-- ── 其他 Tab 占位内容 ── -->
+        <div class="cw-tab-content" id="tabContentWebapp">
+          <div class="cw-placeholder"><i class="fas fa-globe"></i><span>网页应用创建功能即将上线</span></div>
+        </div>
+        <div class="cw-tab-content" id="tabContentMobile">
+          <div class="cw-placeholder"><i class="fas fa-mobile-alt"></i><span>移动应用创建功能即将上线</span></div>
+        </div>
+        <div class="cw-tab-content" id="tabContentMiniapp">
+          <div class="cw-placeholder"><i class="fas fa-qrcode"></i><span>小程序创建功能即将上线</span></div>
+        </div>
+        <div class="cw-tab-content" id="tabContentAgent">
+          <div class="cw-placeholder"><i class="fas fa-robot"></i><span>智能体创建功能即将上线</span></div>
+        </div>
+        <div class="cw-tab-content" id="tabContentWorkflow">
+          <div class="cw-placeholder"><i class="fas fa-project-diagram"></i><span>工作流创建功能即将上线</span></div>
+        </div>
+
+      </div><!-- /cw-card -->
+
     </section>
   </div>
 </div>
@@ -877,6 +991,28 @@ cwApp.classList.add('collapsed');
 document.getElementById('cwMenuBtn').addEventListener('click', () => cwApp.classList.toggle('collapsed'));
 document.querySelectorAll('.cw-hitem').forEach(item => {
   item.addEventListener('click', () => { window.location.href = 'skill-editor.html'; });
+});
+
+// ══════════════════════════════════════════════════════════
+// 类型 Tab 切换
+// ══════════════════════════════════════════════════════════
+const TYPE_TAB_MAP = {
+  webapp: 'tabContentWebapp',
+  mobile: 'tabContentMobile',
+  miniapp: 'tabContentMiniapp',
+  agent:   'tabContentAgent',
+  workflow:'tabContentWorkflow',
+  skills:  'tabContentSkills',
+};
+document.querySelectorAll('.cw-type-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.cw-type-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const type = tab.dataset.type;
+    document.querySelectorAll('.cw-tab-content').forEach(c => c.classList.remove('active'));
+    const target = document.getElementById(TYPE_TAB_MAP[type]);
+    if (target) target.classList.add('active');
+  });
 });
 
 // ══════════════════════════════════════════════════════════
