@@ -18,32 +18,63 @@
     /* 主区域 */
     .cw-app { flex:1; display:flex; min-height:0; overflow:hidden; }
 
-    /* 历史侧栏 */
+    /* 侧边导航栏 */
     .cw-history {
-      width:220px; border-right:1px solid #eceef2;
-      padding:20px 18px; flex-shrink:0; overflow:hidden;
+      width:200px; border-right:1px solid #eceef2;
+      padding:16px 12px; flex-shrink:0; overflow:hidden;
       background:#fff;
       transition:width .18s ease, padding .18s ease;
+      display:flex; flex-direction:column;
     }
-    .cw-app.collapsed .cw-history { width:54px; padding:20px 16px; border-right-color:transparent; }
+    .cw-app.collapsed .cw-history { width:54px; padding:16px 12px; border-right-color:transparent; }
     .cw-app.collapsed .cw-history-content { display:none; }
     .cw-menu-btn {
-      width:22px; height:22px; display:flex; align-items:center; justify-content:center;
-      color:#999; font-size:15px; margin-bottom:28px;
-      border:none; background:transparent; cursor:pointer;
+      width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+      color:#999; font-size:14px; margin-bottom:20px;
+      border:none; background:transparent; cursor:pointer; border-radius:6px;
+      flex-shrink:0;
     }
-    .cw-menu-btn:hover { color:#111; }
-    .cw-history-content { overflow-y:auto; }
-    .cw-hgroup { margin-bottom:18px; }
-    .cw-hgroup-label { font-size:11px; font-weight:600; color:#999; letter-spacing:.3px; margin-bottom:6px; padding:0 2px; }
+    .cw-menu-btn:hover { color:#111; background:#f5f6fa; }
+    .cw-history-content { overflow-y:auto; flex:1; }
+    /* 分组标签 */
+    .cw-nav-section { margin-bottom:6px; }
+    .cw-nav-label {
+      font-size:10.5px; font-weight:700; color:#bbb; letter-spacing:.6px;
+      text-transform:uppercase; padding:0 10px; margin-bottom:2px; margin-top:14px;
+      display:block;
+    }
+    .cw-nav-section:first-child .cw-nav-label { margin-top:0; }
+    /* 导航项 */
     .cw-hitem {
-      display:flex; align-items:center; gap:7px;
-      padding:6px 8px; border-radius:8px; font-size:13px; color:#555;
-      cursor:pointer; transition:background .1s;
+      display:flex; align-items:center; gap:9px;
+      padding:7px 10px; border-radius:8px; font-size:13px; color:#444;
+      cursor:pointer; transition:background .12s, color .12s;
+      white-space:nowrap;
     }
     .cw-hitem:hover { background:#f5f6fa; color:#111; }
-    .cw-hitem i { font-size:11px; color:#999; flex-shrink:0; }
-    .cw-hitem span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cw-hitem.active { background:#f0f1f5; color:#111; font-weight:600; }
+    .cw-hitem i { font-size:13px; color:#999; flex-shrink:0; width:16px; text-align:center; }
+    .cw-hitem.active i { color:#111; }
+    .cw-hitem span { overflow:hidden; text-overflow:ellipsis; }
+    /* 底部分隔 */
+    .cw-nav-divider { height:1px; background:#eceef2; margin:10px 0; }
+    /* 底部用户区 */
+    .cw-nav-bottom {
+      border-top:1px solid #eceef2; padding-top:12px; margin-top:auto; flex-shrink:0;
+    }
+    .cw-nav-user {
+      display:flex; align-items:center; gap:9px;
+      padding:7px 10px; border-radius:8px; cursor:pointer;
+      transition:background .12s;
+    }
+    .cw-nav-user:hover { background:#f5f6fa; }
+    .cw-nav-avatar {
+      width:28px; height:28px; border-radius:50%; background:#111; color:#fff;
+      font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .cw-nav-username { font-size:13px; font-weight:600; color:#111; }
+    .cw-nav-role { font-size:11px; color:#999; }
 
     /* 主编辑区 */
     .cw-main {

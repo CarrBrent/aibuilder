@@ -4,18 +4,35 @@
  *       SkillBuilderSidebar.render('gallery')  // 传入当前页面 key
  */
 (function(global) {
-  const NAV_ITEMS = [
-    { key: 'create',    icon: 'fas fa-plus-circle',   label: '创建技能', href: 'create.html' },
-    { key: 'skills',    icon: 'fas fa-layer-group',   label: '我的技能', href: 'skills.html' },
-    { key: 'gallery',   icon: 'fas fa-compass',       label: 'Skillhub', href: 'gallery.html' },
-    { key: 'templates', icon: 'fas fa-file-alt',      label: '优秀案例', href: 'templates.html' },
-    { key: 'testing',   icon: 'fas fa-flask',         label: '评测优化', href: 'testing.html' },
-    { key: 'analytics', icon: 'fas fa-chart-line',    label: '数据分析', href: 'analytics.html' },
+  const NAV_GROUPS = [
+    {
+      label: '项目',
+      items: [
+        { key: 'skills',    icon: 'fas fa-sliders-h',    label: '技能',   href: 'skills.html' },
+        { key: 'plugins',   icon: 'fas fa-plug',         label: '插件',   href: '#' },
+        { key: 'connector', icon: 'fas fa-link',         label: '连接器', href: '#' },
+        { key: 'prompt',    icon: 'fas fa-align-left',   label: '提示词', href: '#' },
+      ],
+    },
+    {
+      label: '管理',
+      items: [
+        { key: 'testing',   icon: 'fas fa-flask',        label: '评测优化', href: 'testing.html' },
+        { key: 'analytics', icon: 'fas fa-chart-line',   label: '数据分析', href: 'analytics.html' },
+      ],
+    },
+    {
+      label: '更多',
+      items: [
+        { key: 'gallery',   icon: 'fas fa-compass',      label: 'AI Hub',     href: 'gallery.html' },
+        { key: 'joyagent',  icon: 'fas fa-robot',        label: 'JoyAgent',   href: '#' },
+        { key: 'docs',      icon: 'fas fa-book-open',    label: '文档 & 教程', href: '#' },
+      ],
+    },
   ];
 
   const BOTTOM_ITEMS = [
-    { icon: 'fas fa-book-open', label: '文档 & 教程' },
-    { icon: 'fas fa-bell',      label: '通知', badge: '3' },
+    { icon: 'fas fa-bell', label: '通知', badge: '3' },
   ];
 
   const CSS = `
@@ -73,6 +90,12 @@
     }
     .sb-divider { height: 1px; background: var(--border); margin: 4px 0; }
     .sb-group { padding: 2px 8px; }
+    .sb-group-label {
+      font-size: 10px; font-weight: 700; color: #bbb;
+      letter-spacing: .7px; text-transform: uppercase;
+      padding: 10px 8px 3px; display: block;
+    }
+    .sb-group:first-child .sb-group-label { padding-top: 4px; }
     .sb-nav-item {
       display: flex; align-items: center; gap: 9px;
       padding: 7px 8px;
@@ -148,11 +171,16 @@
     document.head.appendChild(style);
 
     // 构建侧边栏 HTML
-    const navItemsHTML = NAV_ITEMS.map(item => `
-      <a class="sb-nav-item ${item.key === activeKey ? 'active' : ''} ${item.accent ? 'accent' : ''}" href="${item.href}">
-        <i class="sb-icon ${item.icon}"></i>
-        <span>${item.label}</span>
-      </a>
+    const navGroupsHTML = NAV_GROUPS.map(group => `
+      <div class="sb-group">
+        <span class="sb-group-label">${group.label}</span>
+        ${group.items.map(item => `
+          <a class="sb-nav-item ${item.key === activeKey ? 'active' : ''}" href="${item.href}">
+            <i class="sb-icon ${item.icon}"></i>
+            <span>${item.label}</span>
+          </a>
+        `).join('')}
+      </div>
     `).join('');
 
     const bottomHTML = BOTTOM_ITEMS.map(item => `
@@ -167,12 +195,14 @@
     sidebarEl.id = 'sb-sidebar';
     sidebarEl.innerHTML = `
       <div class="sb-logo">
-        <div class="sb-logo-icon">S</div>
-        <span class="sb-logo-text">Skill Builder</span>
+        <div class="sb-logo-icon">AI</div>
+        <span class="sb-logo-text">AI Builder</span>
       </div>
-      <div class="sb-group">
-        ${navItemsHTML}
-      </div>
+      <a class="sb-nav-item ${activeKey === 'create' ? 'active' : ''}" href="create.html" style="margin:4px 8px 2px;border-radius:8px;background:#111;color:#fff;font-weight:600;">
+        <i class="sb-icon fas fa-plus" style="color:#fff"></i>
+        <span>创建</span>
+      </a>
+      ${navGroupsHTML}
       <div class="sb-bottom">
         ${bottomHTML}
         <div class="sb-divider" style="margin:6px 0"></div>
