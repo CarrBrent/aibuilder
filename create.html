@@ -173,26 +173,53 @@
     }
     .cw-placeholder i { font-size: 32px; }
 
-    /* ── 模式切换（文字描述 / 录屏生成）── */
-    .cw-mode-tabs {
-      display:flex; gap:6px;
-      padding: 16px 20px 0;
-    }
-    .cw-mode-tab {
+    /* ── 录屏入口：底部工具栏强调药丸按钮 ── */
+    .cw-record-pill {
       display:flex; align-items:center; gap:6px;
-      padding:7px 18px; border-radius:20px; border:1px solid #eceef2;
-      font-size:13px; font-weight:500; color:#888;
-      cursor:pointer; background:#f5f6fa;
-      transition:background .15s, color .15s, border-color .15s;
+      padding:6px 14px; border-radius:20px;
+      border:1px solid #f0d0d2; background:#fff;
+      color:#444; font-size:13px; font-weight:500;
+      cursor:pointer; transition:border-color .15s, box-shadow .15s, background .15s;
+      flex-shrink:0;
     }
-    .cw-mode-tab i { font-size:12px; }
-    .cw-mode-tab:hover { color:#333; border-color:#ccc; background:#eee; }
-    .cw-mode-tab.active {
-      background:#111; color:#fff; font-weight:600; border-color:#111;
+    .cw-record-pill:hover { border-color:#E11D48; background:#fff7f8; box-shadow:0 2px 8px rgba(225,29,72,.10); }
+    .cw-rec-dot {
+      width:8px; height:8px; border-radius:50%; background:#E11D48;
+      box-shadow:0 0 0 0 rgba(225,29,72,.5); animation:recPulse 2s infinite; flex-shrink:0;
     }
-    .cw-mode-tab.active i { color:#fff; }
-    .cw-mode-tab.active.record-tab { background:#111; color:#fff; border-color:#111; }
-    .cw-mode-tab.active.record-tab i { color:#fff; }
+    @keyframes recPulse {
+      0%   { box-shadow:0 0 0 0 rgba(225,29,72,.45); }
+      70%  { box-shadow:0 0 0 6px rgba(225,29,72,0); }
+      100% { box-shadow:0 0 0 0 rgba(225,29,72,0); }
+    }
+
+    /* ── 录屏入口：输入框内浮层引导提示 ── */
+    .cw-record-hint {
+      position:absolute; left:22px; right:22px; bottom:64px; z-index:2;
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px; border-radius:12px;
+      border:1px dashed #f0c8cb; background:rgba(255,247,248,.92);
+      color:#666; font-size:13px; cursor:pointer; text-align:left;
+      transition:border-color .15s, background .15s, box-shadow .15s;
+    }
+    .cw-record-hint:hover { border-color:#E11D48; background:#fff; box-shadow:0 4px 14px rgba(225,29,72,.10); }
+    .cw-record-hint > i:first-child { color:#E11D48; font-size:14px; flex-shrink:0; }
+    .cw-record-hint > span { flex:1; }
+    .cw-record-hint b { color:#E11D48; font-weight:600; }
+    .cw-record-hint > i:last-child { color:#E11D48; font-size:12px; flex-shrink:0; opacity:.7; transition:transform .15s; }
+    .cw-record-hint:hover > i:last-child { transform:translateX(3px); opacity:1; }
+    .cw-record-hint.hidden { display:none; }
+
+    /* ── 录屏面板：返回文字描述链接 ── */
+    .rp-back-link {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 4px; margin-bottom:8px;
+      border:none; background:transparent; cursor:pointer;
+      color:#999; font-size:13px; font-weight:500;
+      transition:color .15s;
+    }
+    .rp-back-link:hover { color:#111; }
+    .rp-back-link i { font-size:11px; }
 
     /* ── 文字模式 ────────────────────────────────────────── */
     #textMode { width:100%; display:flex; flex-direction:column; align-items:stretch; }
@@ -751,16 +778,6 @@
         <!-- ── Skills Tab 内容（模式切换 + 输入框）── -->
         <div class="cw-tab-content active" id="tabContentSkills">
 
-          <!-- 模式切换 -->
-          <div class="cw-mode-tabs">
-            <button class="cw-mode-tab active" data-mode="text">
-              <i class="fas fa-keyboard"></i> 文字描述
-            </button>
-            <button class="cw-mode-tab record-tab" data-mode="record">
-              <i class="fas fa-video"></i> 录屏生成
-            </button>
-          </div>
-
           <!-- ══ 文字模式 ══════════════════════════════════════ -->
           <div id="textMode">
             <div class="cw-composer" id="cwComposer">
@@ -779,6 +796,12 @@
               <div id="cwOptAfter"></div>
             </div>
           </div>
+          <!-- 录屏入口：空状态浮层引导提示 -->
+          <button class="cw-record-hint" id="cwRecordHint">
+            <i class="fas fa-video"></i>
+            <span>不想打字？<b>录屏演示一遍</b>，AI 自动生成技能</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
           <div class="cw-bottom">
             <div class="cw-add-wrap">
               <button class="cw-icon-btn" id="cwAddBtn"><i class="fas fa-plus"></i></button>
@@ -789,6 +812,10 @@
               </div>
             </div>
             <button class="cw-icon-btn" id="cwZipBtn" title="上传 Skill ZIP 包"><i class="fas fa-file-archive"></i></button>
+            <!-- 录屏入口：强调药丸按钮 -->
+            <button class="cw-record-pill" id="cwRecordBtn" title="录屏演示，自动生成技能">
+              <span class="cw-rec-dot"></span> 录屏生成
+            </button>
             <input type="file" id="cwLocalFile" style="display:none">
             <input type="file" id="cwZipFile" style="display:none" accept=".zip">
             <div class="cw-right-btns">
@@ -812,6 +839,7 @@
 
         <!-- 阶段0：设置 -->
         <div class="rp-phase active" id="rPhase0">
+          <button class="rp-back-link" id="rpBackBtn"><i class="fas fa-arrow-left"></i> 返回文字描述</button>
           <div class="rp-label">选择录制方式</div>
           <div class="rp-methods">
             <div class="rp-method selected" id="rpMethodScreen" onclick="rpSelectMethod('screen')">
@@ -1078,28 +1106,25 @@ document.querySelectorAll('.cw-type-tab').forEach(tab => {
 });
 
 // ══════════════════════════════════════════════════════════
-// 模式切换
+// 模式切换：文字 ↔ 录屏（药丸按钮 + 浮层提示 + 返回链接 共用）
 // ══════════════════════════════════════════════════════════
-let currentMode = 'text';
-document.querySelectorAll('.cw-mode-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    const mode = tab.dataset.mode;
-    if (mode === currentMode) return;
-    currentMode = mode;
-    document.querySelectorAll('.cw-mode-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    if (mode === 'text') {
-      document.getElementById('textMode').style.display = '';
-      document.getElementById('recordMode').classList.remove('active');
-    } else {
-      document.getElementById('textMode').style.display = 'none';
-      document.getElementById('recordMode').classList.add('active');
-      rpGoPhase(0);
-    }
-    cwMain.scrollTop = 0;
-  });
-});
 const cwMain = document.getElementById('cwMain');
+
+function enterRecordMode() {
+  document.getElementById('textMode').style.display = 'none';
+  document.getElementById('recordMode').classList.add('active');
+  rpGoPhase(0);
+  cwMain.scrollTop = 0;
+}
+function exitRecordMode() {
+  document.getElementById('textMode').style.display = '';
+  document.getElementById('recordMode').classList.remove('active');
+  cwMain.scrollTop = 0;
+}
+
+document.getElementById('cwRecordBtn').addEventListener('click', enterRecordMode);
+document.getElementById('cwRecordHint').addEventListener('click', enterRecordMode);
+document.getElementById('rpBackBtn').addEventListener('click', exitRecordMode);
 
 // ══════════════════════════════════════════════════════════
 // 点阵背景层：动态同步到 title + card 的高度范围
@@ -1150,11 +1175,14 @@ const optBtn = document.getElementById('cwOptBtn');
 const optActions = document.getElementById('cwOptActions');
 const sendBtn = document.getElementById('cwSend');
 
+const recordHint = document.getElementById('cwRecordHint');
 function syncUI(){
   const has = ta.value.trim().length>0;
   hintBox.classList.toggle('hidden', has);
   optBtn.classList.toggle('hidden', !has || composer.classList.contains('optimized'));
   sendBtn.style.background = has ? '#1A1A1E' : '#D8DDE6';
+  // 录屏浮层引导：仅在空输入 + 非优化态时显示
+  recordHint.classList.toggle('hidden', has || composer.classList.contains('optimized'));
 }
 const _tplPrompt = new URLSearchParams(location.search).get('prompt');
 if (_tplPrompt) { ta.value = decodeURIComponent(_tplPrompt); clearTimeout(hTimer); syncUI(); }
