@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>日志 — Skill Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    .page-shell { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; background:#F5F6F8; }
+
+    /* 顶部 header */
+    .page-header {
+      height:52px; background:#fff; border-bottom:1px solid #EBEBEF;
+      display:flex; align-items:center; padding:0 20px; gap:10px; flex-shrink:0;
+    }
+    .page-title { font-size:15px; font-weight:700; color:#1A1A1E; margin-right:4px; }
+    .page-subtitle { font-size:14px; color:#A1A1AA; }
+
+    /* 筛选栏 */
+    .filter-bar {
+      background:#fff; border-bottom:1px solid #EBEBEF;
+      padding:10px 20px; display:flex; flex-direction:column; gap:8px; flex-shrink:0;
+    }
+    .filter-row { display:flex; align-items:center; gap:8px; }
+    .filter-group {
+      display:flex; align-items:center; border:1px solid #E4E4E7; border-radius:8px;
+      background:#fff; overflow:hidden; height:32px;
+    }
+    .filter-label {
+      padding:0 10px; font-size:12px; color:#71717A; background:#F9F9F9;
+      border-right:1px solid #E4E4E7; white-space:nowrap; height:100%;
+      display:flex; align-items:center; gap:5px;
+    }
+    .filter-select {
+      border:none; outline:none; background:transparent; font-size:12.5px;
+      color:#1A1A1E; padding:0 8px 0 6px; cursor:pointer; height:100%;
+    }
+    .filter-input {
+      border:none; outline:none; background:transparent; font-size:12.5px;
+      color:#1A1A1E; padding:0 10px; width:160px;
+    }
+    .filter-input::placeholder { color:#C0C5D0; }
+    .filter-divider { width:1px; height:14px; background:#E4E4E7; }
+    .btn-refresh {
+      width:32px; height:32px; border-radius:8px; border:1px solid #E4E4E7;
+      background:#fff; color:#71717A; font-size:13px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:all .12s;
+      margin-left:auto;
+    }
+    .btn-refresh:hover { border-color:#18181B; color:#18181B; }
+
+    /* 主体：列表 + 抽屉 */
+    .log-body { flex:1; display:flex; overflow:hidden; min-width:0; }
+
+    /* 日志列表 */
+    .log-list { flex:1; overflow-y:auto; min-width:0; overflow-x:hidden; }
+
+    /* 表头 */
+    .log-thead {
+      display:grid;
+      grid-template-columns: minmax(100px,150px) minmax(80px,1fr) 64px minmax(80px,1.2fr) minmax(80px,110px) minmax(90px,130px) 28px;
+      gap:0; padding:0 16px; height:38px; align-items:center;
+      background:#F9F9F9; border-bottom:1px solid #EBEBEF;
+      font-size:12px; font-weight:600; color:#71717A; position:sticky; top:0; z-index:10;
+    }
+    .log-thead-cell { padding:0 6px; }
+
+    /* 日志行 */
+    .log-row {
+      display:grid;
+      grid-template-columns: minmax(100px,150px) minmax(80px,1fr) 64px minmax(80px,1.2fr) minmax(80px,110px) minmax(90px,130px) 28px;
+      gap:0; padding:0 16px; min-height:44px; align-items:center;
+      border-bottom:1px solid #F0F0F2; cursor:pointer; transition:background .1s;
+      background:#fff;
+    }
+    .log-row:hover { background:#F9F9FA; }
+    .log-row.active { background:#F0F4FF; }
+    .log-cell { padding:0 6px; font-size:13px; color:#1A1A1E; overflow:hidden; }
+
+    .trace-id { display:flex; align-items:center; gap:6px; }
+    .trace-id-text { font-size:12px; color:#52525B; font-family:'SF Mono','Consolas',monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .btn-copy { width:20px; height:20px; border:none; background:transparent; color:#C0C5D0; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .btn-copy:hover { color:#52525B; }
+
+    .input-text { font-size:13px; color:#1A1A1E; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .output-text { font-size:12px; color:#52525B; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    .status-dot { display:inline-flex; align-items:center; gap:5px; font-size:13px; }
+    .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .dot-ok   { background:#16A34A; }
+    .dot-fail { background:#DC2626; }
+    .dot-warn { background:#D97706; }
+    .status-ok   { color:#16A34A; }
+    .status-fail { color:#DC2626; }
+    .status-warn { color:#D97706; }
+
+    .user-cell { display:flex; align-items:center; gap:6px; }
+    .user-text { font-size:12.5px; color:#52525B; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    .time-text { font-size:12px; color:#A1A1AA; white-space:nowrap; }
+
+    /* ── 右侧抽屉（固定浮层，覆盖在页面内容上方） ── */
+    .log-drawer {
+      position:fixed; top:0; right:0; bottom:0;
+      width:0; overflow:hidden;
+      background:#fff; border-left:1px solid #E4E4E7;
+      display:flex; flex-direction:column;
+      transition:width .22s cubic-bezier(.4,0,.2,1);
+      z-index:100; box-shadow:-4px 0 24px rgba(0,0,0,.10);
+    }
+    .log-drawer.open { width:660px; }
+
+    .drawer-head {
+      padding:14px 18px; border-bottom:1px solid #EBEBEF;
+      display:flex; align-items:center; gap:10px; flex-shrink:0;
+    }
+    .drawer-title { font-size:15px; font-weight:700; color:#1A1A1E; }
+    .drawer-badge {
+      display:inline-flex; align-items:center; gap:5px;
+      font-size:12px; font-weight:600; border-radius:6px; padding:3px 8px;
+    }
+    .badge-ok   { background:#F0FDF4; color:#16A34A; }
+    .badge-fail { background:#FEF2F2; color:#DC2626; }
+    .drawer-meta {
+      font-size:12px; color:#71717A; background:#F4F4F5;
+      border-radius:6px; padding:3px 10px;
+    }
+    .drawer-head-actions { margin-left:auto; display:flex; align-items:center; gap:6px; }
+    .dh-btn {
+      width:28px; height:28px; border-radius:7px; border:1px solid #E4E4E7;
+      background:#fff; color:#71717A; font-size:12px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:all .12s;
+    }
+    .dh-btn:hover { border-color:#18181B; color:#18181B; }
+    .dh-close { border:none; background:transparent; color:#A1A1AA; font-size:16px; cursor:pointer; padding:2px 4px; }
+    .dh-close:hover { color:#18181B; }
+
+    /* 抽屉主体：左侧 span 树 + 右侧详情 */
+    .drawer-body { flex:1; overflow:hidden; display:flex; min-height:0; }
+
+    /* span 树 */
+    .span-tree {
+      width:240px; flex-shrink:0; border-right:1px solid #EBEBEF;
+      overflow-y:auto; padding:8px 0;
+    }
+    .span-group { padding:0 8px; margin-bottom:4px; }
+    .span-item {
+      display:flex; align-items:center; gap:7px;
+      padding:7px 10px; border-radius:8px; cursor:pointer;
+      font-size:13px; color:#52525B; transition:background .1s;
+    }
+    .span-item:hover { background:#F4F4F5; }
+    .span-item.active { background:#F0F4FF; color:#1A1A1E; font-weight:600; }
+    .span-icon {
+      width:20px; height:20px; border-radius:5px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:10px; font-weight:700; flex-shrink:0;
+    }
+    .si-blue   { background:#EFF6FF; color:#2563EB; }
+    .si-orange { background:#FFF7ED; color:#D97706; }
+    .si-gray   { background:#F4F4F5; color:#71717A; }
+    .span-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .span-dur { font-size:11px; color:#A1A1AA; white-space:nowrap; flex-shrink:0; }
+    .span-dur.slow { color:#D97706; }
+    .span-chevron { font-size:10px; color:#A1A1AA; }
+    .span-children { padding-left:20px; }
+
+    /* 右侧详情面板 */
+    .span-detail { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; }
+
+    .detail-head { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+    .detail-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
+    .detail-name { font-size:16px; font-weight:700; color:#1A1A1E; }
+
+    .detail-tabs { display:flex; gap:0; border-bottom:2px solid #E4E4E7; }
+    .detail-tab {
+      padding:7px 16px 9px; font-size:13px; font-weight:500; color:#A1A1AA;
+      cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .12s;
+    }
+    .detail-tab:hover { color:#18181B; }
+    .detail-tab.active { color:#18181B; font-weight:600; border-bottom-color:#18181B; }
+
+    .io-section { display:flex; flex-direction:column; gap:4px; }
+    .io-label {
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; font-weight:600; color:#1A1A1E; margin-bottom:6px;
+    }
+    .io-label-actions { margin-left:auto; display:flex; gap:6px; }
+    .io-format-btn {
+      font-size:11px; padding:2px 8px; border-radius:5px; border:1px solid #E4E4E7;
+      background:#fff; color:#71717A; cursor:pointer; transition:all .1s;
+    }
+    .io-format-btn.active { background:#18181B; color:#fff; border-color:#18181B; }
+    .io-box {
+      background:#F9F9F9; border:1px solid #E4E4E7; border-radius:10px;
+      padding:14px 16px; font-size:13px; color:#3F3F46; line-height:1.75;
+      white-space:pre-wrap; font-family:inherit;
+    }
+
+    .meta-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    }
+    .meta-item { display:flex; flex-direction:column; gap:3px; }
+    .meta-key { font-size:11px; color:#A1A1AA; font-weight:500; }
+    .meta-val { font-size:13px; color:#1A1A1E; font-weight:500; }
+    .meta-val.mono { font-family:'SF Mono','Consolas',monospace; font-size:12px; }
+    .meta-val.ok { color:#16A34A; }
+    .meta-val.fail { color:#DC2626; }
+  </style>
+</head>
+<body>
+
+<div class="page-shell">
+
+  <!-- 顶部标题 -->
+  <div class="page-header">
+    <span class="page-title">日志</span>
+    <span class="page-subtitle">Skill 执行追踪</span>
+  </div>
+
+  <!-- 筛选栏 -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <!-- Skill 选择 -->
+      <div class="filter-group">
+        <div class="filter-label"><i class="fas fa-layer-group"></i> Skill</div>
+        <select class="filter-select">
+          <option>全部</option>
+          <option selected>会议纪要整理专家</option>
+          <option>Excel 表格处理</option>
+          <option>代码审查助手</option>
+        </select>
+      </div>
+      <!-- TraceID -->
+      <div class="filter-group">
+        <div class="filter-label">TraceID</div>
+        <input class="filter-input" placeholder="请输入 TraceId" style="width:140px"/>
+      </div>
+      <!-- UserID -->
+      <div class="filter-group">
+        <div class="filter-label">UserID</div>
+        <input class="filter-input" placeholder="请输入用户 ID" style="width:140px"/>
+      </div>
+      <!-- Query -->
+      <div class="filter-group" style="flex:1">
+        <div class="filter-label">Query</div>
+        <input class="filter-input" placeholder="请输入 Query 关键词" style="width:100%"/>
+      </div>
+    </div>
+    <div class="filter-row">
+      <!-- 状态 -->
+      <div class="filter-group">
+        <div class="filter-label">状态</div>
+        <select class="filter-select">
+          <option>全部</option>
+          <option>成功</option>
+          <option>失败</option>
+          <option>警告</option>
+        </select>
+      </div>
+      <!-- 节点 -->
+      <div class="filter-group">
+        <div class="filter-label">节点</div>
+        <select class="filter-select">
+          <option>根节点</option>
+          <option>全部节点</option>
+        </select>
+      </div>
+      <!-- 时间范围 -->
+      <div class="filter-group">
+        <div class="filter-label"><i class="fas fa-calendar-alt"></i></div>
+        <select class="filter-select">
+          <option>过去 1 小时</option>
+          <option selected>过去 3 天</option>
+          <option>过去 7 天</option>
+          <option>过去 30 天</option>
+        </select>
+      </div>
+      <div style="font-size:12px;color:#A1A1AA;padding:0 6px">
+        2026-06-15 20:48:08 — 2026-06-18 20:48:08
+      </div>
+      <button class="btn-refresh"><i class="fas fa-sync-alt"></i></button>
+    </div>
+  </div>
+
+  <!-- 主体 -->
+  <div class="log-body">
+
+    <!-- 列表 -->
+    <div class="log-list">
+      <!-- 表头 -->
+      <div class="log-thead">
+        <div class="log-thead-cell">TraceID</div>
+        <div class="log-thead-cell">输入</div>
+        <div class="log-thead-cell">状态</div>
+        <div class="log-thead-cell">输出</div>
+        <div class="log-thead-cell">用户</div>
+        <div class="log-thead-cell">开始时间</div>
+        <div class="log-thead-cell"></div>
+      </div>
+
+      <!-- 数据行 -->
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">分析</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">**一.商家基本概览** ●主体信息：宝敏瑞…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:47:10</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 1)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">分析</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">根据您提供的图片信息，以下是宝敏瑞个…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:45:38</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 2)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">批量查询：13213213 321321321 2313213…</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">抱歉，未查询到该商家id13213213，请检…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:40:14</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 3)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">商家id：13213213 321321321 2313213…</div></div>
+        <div class="log-cell"><span class="status-dot status-fail"><span class="dot dot-fail"></span>失败</span></div>
+        <div class="log-cell"><div class="output-text">抱歉，未查询到该商家 id，请检查商家 id 内…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:39:56</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">门店id：1231231</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">抱歉，未查询到该门店 id，请检查京东门店…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:39:43</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">诊断：赫泽琼斯旗舰店</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">**商家诊断总结** 赫泽琼斯旗舰店（ID:62…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:39:27</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">景德镇博越皮具有限公司</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">**一.商家基本概览** ●主体信息：卡川奴…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:39:04</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">分析</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">**一.商家基本概览** ●主体信息：宝敏瑞…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:38:11</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">13213213 321321321 2313213 1312321 12…</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">抱歉，未查询到该商家id13213213，请检…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:36:12</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">门店id：1213213213</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">抱歉，未查询到该门店 id，请检查京东门店…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:35:56</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">景德镇博越皮具有限公司</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">**一.商家基本概览** ●主体信息：卡川奴…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:35:41</span></div>
+        <div class="log-cell"></div>
+      </div>
+
+      <div class="log-row" onclick="openDrawer(this, 0)">
+        <div class="log-cell"><div class="trace-id"><span class="trace-id-text">zengjiamin1sessi…</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><div class="input-text">13325779</div></div>
+        <div class="log-cell"><span class="status-dot status-ok"><span class="dot dot-ok"></span>成功</span></div>
+        <div class="log-cell"><div class="output-text">**一.商家基本概览** ●主体信息：悦鲜活…</div></div>
+        <div class="log-cell"><div class="user-cell"><span class="user-text">zengjiamin1</span><button class="btn-copy" onclick="event.stopPropagation()"><i class="fas fa-copy"></i></button></div></div>
+        <div class="log-cell"><span class="time-text">2026/6/18 20:35:22</span></div>
+        <div class="log-cell"></div>
+      </div>
+    </div>
+
+    <!-- 右侧抽屉 -->
+    <div class="log-drawer" id="logDrawer">
+      <div class="drawer-head">
+        <span class="drawer-title" id="drawerTitle">UserInput</span>
+        <span class="drawer-badge badge-ok" id="drawerBadge"><i class="fas fa-check-circle"></i> Success</span>
+        <span class="drawer-meta" id="drawerMeta">Latency: 32,252 ms &nbsp;|&nbsp; Tokens: 0</span>
+        <div class="drawer-head-actions">
+          <button class="dh-btn" title="全屏"><i class="fas fa-expand-alt"></i></button>
+          <button class="dh-btn" title="复制链接"><i class="fas fa-link"></i></button>
+          <button class="dh-btn" title="复制内容"><i class="fas fa-copy"></i></button>
+          <button class="dh-btn" id="prevBtn" onclick="navigateSpan(-1)"><i class="fas fa-chevron-left"></i></button>
+          <button class="dh-btn" id="nextBtn" onclick="navigateSpan(1)"><i class="fas fa-chevron-right"></i></button>
+          <button class="dh-close" onclick="closeDrawer()"><i class="fas fa-times"></i></button>
+        </div>
+      </div>
+      <div class="drawer-body">
+        <!-- span 树 -->
+        <div class="span-tree" id="spanTree"></div>
+        <!-- 详情 -->
+        <div class="span-detail" id="spanDetail"></div>
+      </div>
+    </div>
+
+  </div><!-- /log-body -->
+</div><!-- /page-shell -->
+
+<script>
+// ── 数据 ──
+const TRACES = [
+  {
+    title: 'UserInput',
+    status: 'ok',
+    latency: '32,252 ms',
+    tokens: '0',
+    spans: [
+      {
+        id: 'root', label: 'UserInput', dur: '32.25s', slow: true, icon: 'si-blue', ch: 'U',
+        expandable: true, open: true,
+        children: [
+          { id: 's1', label: '记忆召回', tag: 'memory', dur: '0ms', icon: 'si-orange', ch: 'M' },
+          { id: 's2', label: 'debug—意图过滤', dur: '453ms', icon: 'si-blue', ch: 'D' },
+          { id: 's3', label: '工具选择', dur: '760ms', icon: 'si-blue', ch: 'T' },
+          { id: 's4', label: 'debug—工具选择提…', dur: '0ms', icon: 'si-blue', ch: 'D' },
+          { id: 's5', label: 'debug—算法返回', dur: '0ms', icon: 'si-blue', ch: 'D' },
+          {
+            id: 's6', label: '调用店铺信息查询—…', dur: '30.80s', slow: true, icon: 'si-blue', ch: 'A',
+            expandable: true, open: true,
+            children: [
+              { id: 's6a', label: '开始', dur: '2ms', icon: 'si-blue', ch: 'S' },
+              { id: 's6b', label: '图片识别', dur: '1.37s', slow: false, icon: 'si-blue', ch: 'I' },
+              { id: 's6c', label: '代码', dur: '32ms', icon: 'si-blue', ch: 'C' },
+              { id: 's6d', label: '店铺信息查询—图片…', dur: '29.24s', slow: true, icon: 'si-blue', ch: 'A' },
+              { id: 's6e', label: '结束', dur: '2ms', icon: 'si-blue', ch: 'E' },
+            ]
+          },
+        ]
+      }
+    ],
+    activeSpan: 'root',
+    detail: {
+      root: {
+        name: 'UserInput', icon: 'si-blue', ch: 'U',
+        input: '分析',
+        output: `**一.商家基本概览**
+●主体信息：宝敏瑞个护专营店（vender_id:10380228）| B店-专营店 | 宁波市宝敏瑞贸易有限公司
+●店铺状态：启用中（有效）| 开店日期：2020-05-22（已运营2217天）| 注册地：浙江-宁波市-江北区
+●层级/星级：L4 | 4.7
+●主营类目：个人护理-身体护理（大商超事业群-护业务部-洗发护发组）
+
+**二.经营与流量表现**
+●核心交易：近30天GMV：172568.0** | 近30天订单量：4016（刷单占0~10%）
+●流量结构：近30天商访pv：57228.0，其自然流量占比81.3%，广告流量占比18.7% | 近30天搜索曝光自然PV739682.0，占搜索曝光整体100.0%
+●广告投放：近30天广告消耗：538.4，广告费率为0.3%`,
+        meta: { status: 'Success', statusCode: '—', spanId: '97058094f7c2bc2f', type: 'UserInput', latency: '32,252ms', startTime: '2026-06-18 20:47:10' }
+      },
+      s2: {
+        name: 'debug—意图过滤', icon: 'si-blue', ch: 'D',
+        input: '{"query":"分析","history":[],"memory":[]}',
+        output: '{"intent":"store_analysis","confidence":0.97,"tools":["shop_info_query"]}',
+        meta: { status: 'Success', statusCode: '200', spanId: 'a3f1c8d92e4b7011', type: 'LLMCall', latency: '453ms', startTime: '2026-06-18 20:47:10' }
+      },
+      s3: {
+        name: '工具选择', icon: 'si-blue', ch: 'T',
+        input: '{"intent":"store_analysis","available_tools":["shop_info_query","order_query","ad_query"]}',
+        output: '{"selected":"shop_info_query","reason":"用户意图为商家分析，优先调用店铺信息查询工具"}',
+        meta: { status: 'Success', statusCode: '200', spanId: 'b2e9d04a1c3f8822', type: 'ToolSelector', latency: '760ms', startTime: '2026-06-18 20:47:10' }
+      },
+    }
+  },
+  {
+    title: 'UserInput',
+    status: 'ok',
+    latency: '18,431 ms',
+    tokens: '1,204',
+    spans: [
+      {
+        id: 'root', label: 'UserInput', dur: '18.43s', slow: false, icon: 'si-blue', ch: 'U',
+        expandable: true, open: true,
+        children: [
+          { id: 's1', label: '记忆召回', tag: 'memory', dur: '0ms', icon: 'si-orange', ch: 'M' },
+          { id: 's2', label: 'debug—意图过滤', dur: '380ms', icon: 'si-blue', ch: 'D' },
+          { id: 's3', label: '工具选择', dur: '520ms', icon: 'si-blue', ch: 'T' },
+          { id: 's4', label: '图片分析', dur: '17.53s', slow: true, icon: 'si-blue', ch: 'I' },
+        ]
+      }
+    ],
+    activeSpan: 'root',
+    detail: {
+      root: {
+        name: 'UserInput', icon: 'si-blue', ch: 'U',
+        input: '分析',
+        output: '根据您提供的图片信息，以下是宝敏瑞个护专营店的综合分析报告…',
+        meta: { status: 'Success', statusCode: '—', spanId: 'c1d4e5f6a7b8c9d0', type: 'UserInput', latency: '18,431ms', startTime: '2026-06-18 20:45:38' }
+      }
+    }
+  },
+  {
+    title: 'UserInput',
+    status: 'ok',
+    latency: '9,872 ms',
+    tokens: '432',
+    spans: [
+      {
+        id: 'root', label: 'UserInput', dur: '9.87s', slow: false, icon: 'si-blue', ch: 'U',
+        expandable: true, open: true,
+        children: [
+          { id: 's1', label: '记忆召回', tag: 'memory', dur: '0ms', icon: 'si-orange', ch: 'M' },
+          { id: 's2', label: 'debug—意图过滤', dur: '290ms', icon: 'si-blue', ch: 'D' },
+          { id: 's3', label: '批量查询执行', dur: '9.58s', slow: true, icon: 'si-blue', ch: 'B' },
+        ]
+      }
+    ],
+    activeSpan: 'root',
+    detail: {
+      root: {
+        name: 'UserInput', icon: 'si-blue', ch: 'U',
+        input: '批量查询：13213213 321321321 2313213…',
+        output: '抱歉，未查询到该商家id13213213，请检查商家id是否正确。',
+        meta: { status: 'Success', statusCode: '—', spanId: 'd2e3f4a5b6c7d8e9', type: 'UserInput', latency: '9,872ms', startTime: '2026-06-18 20:40:14' }
+      }
+    }
+  },
+  {
+    title: 'UserInput',
+    status: 'fail',
+    latency: '5,012 ms',
+    tokens: '0',
+    spans: [
+      {
+        id: 'root', label: 'UserInput', dur: '5.01s', slow: false, icon: 'si-blue', ch: 'U',
+        expandable: true, open: true,
+        children: [
+          { id: 's1', label: '记忆召回', tag: 'memory', dur: '0ms', icon: 'si-orange', ch: 'M' },
+          { id: 's2', label: 'debug—意图过滤', dur: '310ms', icon: 'si-blue', ch: 'D' },
+          { id: 's3', label: '工具选择', dur: '420ms', icon: 'si-blue', ch: 'T' },
+          { id: 's4', label: '商家查询', dur: '4.28s', slow: true, icon: 'si-gray', ch: '!', error: true },
+        ]
+      }
+    ],
+    activeSpan: 'root',
+    detail: {
+      root: {
+        name: 'UserInput', icon: 'si-blue', ch: 'U',
+        input: '商家id：13213213 321321321…',
+        output: '[ERROR] ToolCallException: 商家查询接口超时（timeout: 4000ms），已重试 2 次仍失败。',
+        meta: { status: 'Failed', statusCode: '500', spanId: 'e3f4a5b6c7d8e9f0', type: 'UserInput', latency: '5,012ms', startTime: '2026-06-18 20:39:56' }
+      }
+    }
+  }
+];
+
+let currentTraceIdx = 0;
+let activeSpanId = 'root';
+
+function flattenSpans(spans) {
+  const result = [];
+  function walk(list, depth) {
+    for (const s of list) {
+      result.push({ ...s, depth });
+      if (s.children && s.open) walk(s.children, depth + 1);
+    }
+  }
+  walk(spans, 0);
+  return result;
+}
+
+function renderSpanTree(trace) {
+  const tree = document.getElementById('spanTree');
+  const flat = flattenSpans(trace.spans);
+  tree.innerHTML = flat.map(s => `
+    <div class="span-group" style="padding-left:${8 + s.depth * 20}px">
+      <div class="span-item ${s.id === activeSpanId ? 'active' : ''}" onclick="selectSpan('${s.id}')">
+        <div class="span-icon ${s.icon}" style="${s.error ? 'background:#FEF2F2;color:#DC2626' : ''}">${s.ch}</div>
+        <span class="span-label">${s.label}${s.tag ? ` <span style="font-size:10px;background:#FFF7ED;color:#D97706;border-radius:4px;padding:1px 5px">${s.tag}</span>` : ''}</span>
+        ${s.dur ? `<span class="span-dur ${s.slow ? 'slow' : ''}">${s.dur}</span>` : ''}
+        ${s.expandable ? '<i class="fas fa-chevron-down span-chevron"></i>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSpanDetail(trace) {
+  const detail = document.getElementById('spanDetail');
+  const d = (trace.detail || {})[activeSpanId] || trace.detail['root'];
+  if (!d) { detail.innerHTML = ''; return; }
+
+  const isOk = d.meta.status === 'Success';
+  detail.innerHTML = `
+    <div>
+      <div class="detail-head">
+        <div class="detail-icon ${d.icon}" style="font-size:14px;font-weight:700">${d.ch}</div>
+        <div class="detail-name">${d.name}</div>
+      </div>
+      <div class="detail-tabs">
+        <div class="detail-tab active">Run</div>
+        <div class="detail-tab">Metadata</div>
+      </div>
+    </div>
+    <div class="io-section">
+      <div class="io-label">
+        Input
+        <button class="dh-btn" style="width:24px;height:24px;font-size:11px" title="复制"><i class="fas fa-copy"></i></button>
+        <div class="io-label-actions">
+          <button class="io-format-btn active">TEXT</button>
+          <button class="io-format-btn">JSON</button>
+        </div>
+      </div>
+      <div class="io-box">${escHtml(d.input)}</div>
+    </div>
+    <div class="io-section">
+      <div class="io-label">
+        Output
+        <button class="dh-btn" style="width:24px;height:24px;font-size:11px" title="复制"><i class="fas fa-copy"></i></button>
+        <div class="io-label-actions">
+          <button class="io-format-btn active">TEXT</button>
+          <button class="io-format-btn">JSON</button>
+        </div>
+      </div>
+      <div class="io-box">${escHtml(d.output)}</div>
+    </div>
+    <div>
+      <div class="detail-tabs" style="margin-bottom:12px">
+        <div class="detail-tab active" style="padding-left:0">元数据</div>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item"><div class="meta-key">Status</div><div class="meta-val ${isOk ? 'ok' : 'fail'}">${isOk ? '● ' : '● '}${d.meta.status}</div></div>
+        <div class="meta-item"><div class="meta-key">StatusCode</div><div class="meta-val">${d.meta.statusCode}</div></div>
+        <div class="meta-item"><div class="meta-key">SpanID</div><div class="meta-val mono">${d.meta.spanId} <button class="btn-copy" style="display:inline-flex"><i class="fas fa-copy"></i></button></div></div>
+        <div class="meta-item"><div class="meta-key">Type</div><div class="meta-val">${d.meta.type}</div></div>
+        <div class="meta-item"><div class="meta-key">Latency</div><div class="meta-val">${d.meta.latency}</div></div>
+        <div class="meta-item"><div class="meta-key">StartTime</div><div class="meta-val">${d.meta.startTime}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function selectSpan(id) {
+  activeSpanId = id;
+  const trace = TRACES[currentTraceIdx];
+  renderSpanTree(trace);
+  renderSpanDetail(trace);
+}
+
+function openDrawer(rowEl, traceIdx) {
+  document.querySelectorAll('.log-row').forEach(r => r.classList.remove('active'));
+  rowEl.classList.add('active');
+  currentTraceIdx = traceIdx;
+  activeSpanId = 'root';
+  const trace = TRACES[traceIdx];
+  const drawer = document.getElementById('logDrawer');
+  drawer.classList.add('open');
+  document.getElementById('drawerTitle').textContent = trace.title;
+  const badge = document.getElementById('drawerBadge');
+  badge.className = 'drawer-badge ' + (trace.status === 'ok' ? 'badge-ok' : 'badge-fail');
+  badge.innerHTML = trace.status === 'ok'
+    ? '<i class="fas fa-check-circle"></i> Success'
+    : '<i class="fas fa-times-circle"></i> Failed';
+  document.getElementById('drawerMeta').textContent = `Latency: ${trace.latency} | Tokens: ${trace.tokens}`;
+  renderSpanTree(trace);
+  renderSpanDetail(trace);
+}
+
+function closeDrawer() {
+  document.getElementById('logDrawer').classList.remove('open');
+  document.querySelectorAll('.log-row').forEach(r => r.classList.remove('active'));
+}
+
+function navigateSpan(dir) {
+  const trace = TRACES[currentTraceIdx];
+  const flat = flattenSpans(trace.spans);
+  const idx = flat.findIndex(s => s.id === activeSpanId);
+  const next = flat[idx + dir];
+  if (next) selectSpan(next.id);
+}
+
+</script>
+<script src="sidebar.js"></script>
+<script>SkillBuilderSidebar.render('changelog')</script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>优秀案例 — Skill Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    .page-shell { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; background:#F5F6F8; }
+    .page-header { height:52px; background:#fff; border-bottom:1px solid #EBEBEF; display:flex; align-items:center; padding:0 24px; gap:12px; flex-shrink:0; }
+    .page-title { font-size:16px; font-weight:700; color:#1A1A1E; }
+    .header-search { display:flex; align-items:center; gap:8px; background:#F5F6F8; border:1px solid #EBEBEF; border-radius:8px; padding:7px 12px; width:240px; transition:border-color .15s; }
+    .header-search:focus-within { border-color:#18181B; background:#fff; }
+    .header-search i { color:#9A9AAB; font-size:13px; }
+    .header-search input { border:none; outline:none; background:transparent; font-size:13px; color:#1A1A1E; flex:1; }
+    .header-search input::placeholder { color:#C0C5D0; }
+    .header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .btn-primary { padding:8px 16px; border-radius:8px; background:#18181B; color:#fff; font-size:13px; font-weight:600; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background .12s; }
+    .btn-primary:hover { background:#3F3F46; }
+    .page-body { flex:1; overflow-y:auto; padding:20px 24px; }
+
+    /* 精选横幅 */
+    .featured-banner {
+      background:#18181B; border-radius:12px; padding:20px 24px;
+      margin-bottom:18px; display:flex; align-items:center; gap:20px;
+    }
+    .featured-emoji { font-size:32px; }
+    .featured-info { flex:1; }
+    .featured-label { font-size:11px; font-weight:600; color:#71717A; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+    .featured-title { font-size:17px; font-weight:800; color:#fff; margin-bottom:4px; }
+    .featured-desc { font-size:13px; color:#A1A1AA; line-height:1.5; }
+    .featured-btn { padding:9px 18px; border-radius:8px; background:#fff; color:#18181B; font-size:13px; font-weight:700; border:none; cursor:pointer; white-space:nowrap; transition:background .12s; flex-shrink:0; }
+    .featured-btn:hover { background:#E4E4E7; }
+
+    /* 分类 + 筛选栏 */
+    .filter-bar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+    .cat-chips { display:flex; gap:6px; flex:1; flex-wrap:wrap; }
+    .cat-chip { padding:6px 14px; border-radius:8px; font-size:13px; font-weight:500; color:#52525B; background:#fff; border:1px solid #E4E4E7; cursor:pointer; transition:all .12s; white-space:nowrap; }
+    .cat-chip:hover { border-color:#18181B; color:#18181B; }
+    .cat-chip.active { background:#18181B; color:#fff; border-color:#18181B; font-weight:600; }
+
+    /* 来源 tab + 排序 */
+    .filter-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .src-tabs { display:flex; gap:0; background:#fff; border:1px solid #E4E4E7; border-radius:8px; padding:3px; }
+    .src-tab { padding:4px 12px; border-radius:6px; font-size:12px; font-weight:500; color:#71717A; cursor:pointer; transition:all .1s; }
+    .src-tab:hover { color:#18181B; }
+    .src-tab.active { background:#18181B; color:#fff; font-weight:600; }
+    .sort-select { font-size:13px; color:#52525B; background:#fff; border:1px solid #E4E4E7; border-radius:7px; padding:5px 10px; cursor:pointer; outline:none; }
+    .result-count { font-size:13px; color:#A1A1AA; white-space:nowrap; }
+
+    /* 卡片网格 */
+    .tpl-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
+
+    .tpl-card {
+      background:#fff; border:1px solid #E4E4E7; border-radius:12px;
+      padding:16px; cursor:pointer; transition:border-color .15s, box-shadow .15s;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .tpl-card:hover { border-color:#18181B; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+
+    .tpl-card-top { display:flex; align-items:center; gap:10px; }
+    .tpl-icon { width:36px; height:36px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:17px; background:#F4F4F5; }
+    .tpl-name { font-size:14px; font-weight:700; color:#18181B; }
+    .tpl-category { font-size:11px; color:#A1A1AA; margin-top:2px; }
+
+    .tpl-desc { font-size:13px; color:#52525B; line-height:1.6; }
+
+    .tpl-footer { display:flex; align-items:center; gap:6px; }
+    .tpl-tag { font-size:11px; color:#52525B; background:#F4F4F5; border-radius:5px; padding:2px 7px; }
+    .tpl-meta { margin-left:auto; font-size:12px; color:#A1A1AA; display:flex; align-items:center; gap:8px; }
+    .tpl-meta span { display:flex; align-items:center; gap:3px; }
+
+    .tpl-actions { display:flex; gap:6px; }
+    .btn-use { padding:6px 14px; border-radius:7px; background:#18181B; color:#fff; font-size:12px; font-weight:600; border:none; cursor:pointer; transition:background .12s; }
+    .btn-use:hover { background:#3F3F46; }
+    .btn-ghost { padding:6px 10px; border-radius:7px; background:#F4F4F5; color:#52525B; font-size:12px; font-weight:500; border:1px solid #E4E4E7; cursor:pointer; transition:all .12s; }
+    .btn-ghost:hover { border-color:#18181B; color:#18181B; }
+    .btn-save { width:28px; height:28px; border-radius:7px; background:#F4F4F5; color:#71717A; font-size:12px; border:1px solid #E4E4E7; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .12s; margin-left:auto; }
+    .btn-save:hover { border-color:#18181B; color:#18181B; }
+    .btn-save.saved { background:#18181B; color:#fff; border-color:#18181B; }
+
+    /* 详情弹层 */
+    .modal-mask { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:200; display:none; align-items:center; justify-content:center; }
+    .modal-mask.open { display:flex; }
+    .modal { background:#fff; border-radius:16px; width:640px; max-height:82vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.18); }
+    .modal-head { padding:20px 24px 16px; display:flex; align-items:flex-start; gap:14px; border-bottom:1px solid #E4E4E7; }
+    .modal-icon { width:44px; height:44px; border-radius:10px; background:#F4F4F5; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .modal-title { font-size:17px; font-weight:800; color:#18181B; margin-bottom:3px; }
+    .modal-sub { font-size:12px; color:#71717A; }
+    .modal-close { margin-left:auto; width:28px; height:28px; border-radius:7px; border:none; background:#F4F4F5; color:#71717A; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .modal-close:hover { background:#E4E4E7; color:#18181B; }
+    .modal-body { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:18px; }
+    .modal-section-title { font-size:11px; font-weight:600; color:#A1A1AA; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+    .modal-prompt { background:#F9F9F9; border:1px solid #E4E4E7; border-radius:10px; padding:14px 16px; font-size:12.5px; color:#3F3F46; line-height:1.75; font-family:'SF Mono','Consolas',monospace; white-space:pre-wrap; }
+    .modal-vars { display:flex; flex-direction:column; gap:6px; }
+    .modal-var { display:flex; align-items:center; gap:10px; font-size:13px; }
+    .modal-var code { background:#F4F4F5; border-radius:5px; padding:2px 8px; color:#18181B; font-size:12px; font-family:'SF Mono','Consolas',monospace; white-space:nowrap; }
+    .modal-var span { color:#52525B; }
+    .modal-tags { display:flex; flex-wrap:wrap; gap:6px; }
+    .modal-tag { font-size:12px; color:#52525B; background:#F4F4F5; border-radius:6px; padding:3px 10px; }
+    .modal-foot { padding:14px 24px; border-top:1px solid #E4E4E7; display:flex; gap:8px; }
+    .modal-btn-primary { flex:1; padding:10px 0; border-radius:9px; background:#18181B; color:#fff; font-size:14px; font-weight:600; border:none; cursor:pointer; transition:background .12s; }
+    .modal-btn-primary:hover { background:#3F3F46; }
+    .modal-btn-sec { padding:10px 20px; border-radius:9px; background:#F4F4F5; color:#52525B; font-size:14px; font-weight:500; border:1px solid #E4E4E7; cursor:pointer; transition:all .12s; }
+    .modal-btn-sec:hover { border-color:#18181B; color:#18181B; }
+
+    /* ── Page toolbar ── */
+    .page-toolbar {
+      display:flex; align-items:center; gap:10px;
+      padding:0 24px; height:48px; background:#fff;
+      border-bottom:1px solid #eceef2; flex-shrink:0;
+    }
+    .toolbar-search {
+      display:flex; align-items:center; gap:8px;
+      background:#f5f6fa; border:1px solid #eceef2; border-radius:8px;
+      padding:6px 12px; width:240px; transition:border-color .15s;
+    }
+    .toolbar-search:focus-within { border-color:#bbb; background:#fff; }
+    .toolbar-search i { color:#999; font-size:13px; }
+    .toolbar-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
+    .toolbar-search input::placeholder { color:#999; }
+    .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .content-toolbar {
+      display:flex; align-items:center; gap:10px; margin-bottom:20px;
+    }
+    .content-toolbar .toolbar-search {
+      display:flex; align-items:center; gap:8px;
+      background:#fff; border:1px solid #eceef2; border-radius:8px;
+      padding:7px 12px; width:240px; transition:border-color .15s;
+    }
+    .content-toolbar .toolbar-search:focus-within { border-color:#bbb; }
+    .content-toolbar .toolbar-search i { color:#999; font-size:13px; }
+    .content-toolbar .toolbar-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
+    .content-toolbar .toolbar-search input::placeholder { color:#999; }
+    .content-toolbar .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  </style>
+</head>
+<body>
+
+<div class="page-shell">
+  <div class="page-header">
+    <span class="page-title">优秀案例</span>
+  </div>
+
+  <div class="page-body">
+    <div class="content-toolbar">
+      <div class="toolbar-search">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="搜索模板…"/>
+    </div>
+      <div class="toolbar-end">
+      <button class="btn-primary"><i class="fas fa-plus"></i> 提交模板</button>
+    </div>
+    </div>
+
+    <!-- 精选横幅 -->
+    <div class="featured-banner">
+      <div class="featured-emoji">✨</div>
+      <div class="featured-info">
+        <div class="featured-label">本周精选</div>
+        <div class="featured-title">会议纪要一键结构化</div>
+        <div class="featured-desc">输入原始会议记录，自动提取议题、决议、行动项并输出标准 Markdown 格式。被 2,300+ 个 Skill 引用。</div>
+      </div>
+      <button class="featured-btn" onclick="openModal()">查看模板</button>
+    </div>
+
+    <!-- 分类 chip + 筛选 -->
+    <div class="filter-bar">
+      <div class="cat-chips">
+        <div class="cat-chip active" data-cat="all">全部 <span style="color:#A1A1AA;font-weight:400">48</span></div>
+        <div class="cat-chip" data-cat="writing">写作</div>
+        <div class="cat-chip" data-cat="analysis">分析</div>
+        <div class="cat-chip" data-cat="code">代码</div>
+        <div class="cat-chip" data-cat="summary">总结</div>
+        <div class="cat-chip" data-cat="qa">问答</div>
+        <div class="cat-chip" data-cat="transform">格式转换</div>
+      </div>
+      <div class="filter-right">
+        <div class="src-tabs">
+          <div class="src-tab active">全部</div>
+          <div class="src-tab">官方</div>
+          <div class="src-tab">社区</div>
+          <div class="src-tab">已收藏</div>
+        </div>
+        <select class="sort-select">
+          <option>最多使用</option>
+          <option>最新发布</option>
+          <option>最高评分</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 卡片网格 -->
+    <div class="tpl-grid">
+
+      <div class="tpl-card" onclick="openModal()">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">📋</div>
+          <div>
+            <div class="tpl-name">会议纪要结构化</div>
+            <div class="tpl-category">总结 · 官方</div>
+          </div>
+        </div>
+        <div class="tpl-desc">将非结构化会议记录提炼为议题、决议与行动项，支持指定负责人和截止日期。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">结构化输出</span>
+          <span class="tpl-tag">中文</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 2,341</span>
+            <span><i class="fas fa-star"></i> 4.8</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('你是一位专业的会议记录整理助手。请将以下会议记录整理为结构化格式：\n\n## 会议概况\n- 时间：{{date}}\n- 参与人：{{participants}}\n- 主持人：{{host}}\n\n## 议题与讨论\n{{meeting_notes}}\n\n请按以下结构输出：\n\n### 📌 核心决议\n（逐条列出本次会议达成的决定）\n\n### ✅ 行动项\n| 编号 | 任务 | 负责人 | 截止日期 |\n|------|------|--------|----------|\n\n### 💬 待跟进问题\n（列出尚未解决、需要后续跟进的问题）')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">🔍</div>
+          <div>
+            <div class="tpl-name">代码审查助手</div>
+            <div class="tpl-category">代码 · 官方</div>
+          </div>
+        </div>
+        <div class="tpl-desc">逐行分析代码，指出潜在 Bug、性能瓶颈和安全隐患，并给出具体改进建议。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">代码</span>
+          <span class="tpl-tag">思维链</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 1,876</span>
+            <span><i class="fas fa-star"></i> 4.7</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('你是一位资深工程师，擅长代码审查。请对以下 {{language}} 代码进行全面审查：\n\n关注点：\n1. 潜在 Bug 和边界情况\n2. 性能问题\n3. 安全漏洞\n4. 代码可读性和可维护性\n5. 是否符合最佳实践\n\n代码：\n{{code}}\n\n请逐条列出问题，并给出具体的改进建议。')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">✍️</div>
+          <div>
+            <div class="tpl-name">公文写作润色</div>
+            <div class="tpl-category">写作 · 社区</div>
+          </div>
+        </div>
+        <div class="tpl-desc">将口语化草稿转化为正式公文风格，保留核心内容，调整用词和句式结构。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">写作</span>
+          <span class="tpl-tag">中文</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 1,204</span>
+            <span><i class="fas fa-star"></i> 4.6</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('请将以下内容改写为规范的公文格式，要求：语言庄重简练，逻辑清晰，避免口语化表达。\n\n原文：{{input}}\n\n改写后请标注修改要点，说明每处调整的原因。')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">📊</div>
+          <div>
+            <div class="tpl-name">数据洞察报告</div>
+            <div class="tpl-category">分析 · 官方</div>
+          </div>
+        </div>
+        <div class="tpl-desc">输入原始数据或指标，自动生成执行摘要、趋势分析和行动建议，适合管理层汇报。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">分析</span>
+          <span class="tpl-tag">结构化输出</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 987</span>
+            <span><i class="fas fa-star"></i> 4.5</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('你是数据分析专家。请基于以下数据生成洞察报告：\n\n数据：{{data}}\n时间范围：{{period}}\n受众：{{audience}}\n\n输出格式：\n\n**执行摘要**（3句话以内）\n\n**核心趋势分析**\n\n**关键发现**（3-5条）\n\n**行动建议**（按优先级排列）')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">🌐</div>
+          <div>
+            <div class="tpl-name">多语言翻译专家</div>
+            <div class="tpl-category">格式转换 · 社区</div>
+          </div>
+        </div>
+        <div class="tpl-desc">支持 20+ 语种互译，保留专业术语和文体风格，输出双栏对照格式。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">多语言</span>
+          <span class="tpl-tag">格式转换</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 834</span>
+            <span><i class="fas fa-star"></i> 4.4</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('你是专业翻译，精通 {{source_lang}} 和 {{target_lang}}。\n\n请翻译以下内容，要求：\n- 保留专业术语（如有疑义，括号注明原文）\n- 保持原文语气和风格\n- 输出中英双栏对照\n\n原文：\n{{text}}')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">🎯</div>
+          <div>
+            <div class="tpl-name">用户意图分类</div>
+            <div class="tpl-category">分析 · 官方</div>
+          </div>
+        </div>
+        <div class="tpl-desc">对用户输入进行意图识别和分类，输出 JSON 格式结果，支持自定义类别和置信度阈值。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">JSON</span>
+          <span class="tpl-tag">分类</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 756</span>
+            <span><i class="fas fa-star"></i> 4.6</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('对用户输入进行意图分类，返回 JSON 格式：\n\n类别列表：{{categories}}\n置信度阈值：{{threshold}}\n\n输出格式：\n{\n  "intent": "分类名",\n  "confidence": 0.92,\n  "reason": "判断理由"\n}\n\n用户输入：{{user_input}}')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">💬</div>
+          <div>
+            <div class="tpl-name">客服回复生成</div>
+            <div class="tpl-category">写作 · 社区</div>
+          </div>
+        </div>
+        <div class="tpl-desc">根据用户投诉或咨询内容，生成专业、有温度的客服回复，支持配置品牌调性。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">写作</span>
+          <span class="tpl-tag">角色扮演</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 643</span>
+            <span><i class="fas fa-star"></i> 4.3</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('你是{{brand}}的客服专员，回复风格：{{tone}}。\n\n用户反馈：{{user_message}}\n\n回复要求：\n1. 先表达理解和共情\n2. 给出具体解决方案\n3. 结尾引导下一步行动\n\n请生成专业、有温度的客服回复。')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">📝</div>
+          <div>
+            <div class="tpl-name">长文摘要提炼</div>
+            <div class="tpl-category">总结 · 官方</div>
+          </div>
+        </div>
+        <div class="tpl-desc">支持万字以上长文本，按受众类型生成不同详细程度的摘要，并提取关键词和核心论点。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">长文本</span>
+          <span class="tpl-tag">总结</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 598</span>
+            <span><i class="fas fa-star"></i> 4.5</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('请为以下长文生成摘要：\n\n受众：{{audience_type}}（专家 / 管理层 / 普通读者）\n字数限制：{{word_limit}} 字以内\n\n原文：\n{{content}}\n\n输出：\n**核心论点**（1-3条）\n**详细摘要**\n**关键词**（5个）')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+      <div class="tpl-card">
+        <div class="tpl-card-top">
+          <div class="tpl-icon">🧪</div>
+          <div>
+            <div class="tpl-name">单元测试生成</div>
+            <div class="tpl-category">代码 · 官方</div>
+          </div>
+        </div>
+        <div class="tpl-desc">根据函数签名和业务描述，自动生成覆盖正常路径、边界和异常情况的单元测试用例。</div>
+        <div class="tpl-footer">
+          <span class="tpl-tag">代码</span>
+          <span class="tpl-tag">测试</span>
+          <div class="tpl-meta">
+            <span><i class="fas fa-download"></i> 521</span>
+            <span><i class="fas fa-star"></i> 4.4</span>
+          </div>
+        </div>
+        <div class="tpl-actions">
+          <button class="btn-use" onclick="event.stopPropagation();useTemplate('为以下 {{language}} 函数生成单元测试：\n\n函数：\n{{function_code}}\n\n测试框架：{{test_framework}}\n\n覆盖要求：\n1. 正常路径（至少2个用例）\n2. 边界条件\n3. 异常情况（错误输入、空值等）\n\n请生成完整可运行的测试代码。')">用此模板</button>
+          <button class="btn-ghost" onclick="event.stopPropagation()">预览</button>
+          <button class="btn-save" onclick="event.stopPropagation();this.classList.toggle('saved')"><i class="fas fa-bookmark"></i></button>
+        </div>
+      </div>
+
+    </div><!-- /tpl-grid -->
+  </div><!-- /page-body -->
+</div><!-- /page-shell -->
+
+<!-- 详情弹层 -->
+<div class="modal-mask" id="modalMask" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-icon">📋</div>
+      <div>
+        <div class="modal-title">会议纪要结构化</div>
+        <div class="modal-sub">总结 · 官方 · 被 2,341 个 Skill 使用</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-section-title">提示词</div>
+        <div class="modal-prompt">你是一位专业的会议记录整理助手。请将以下会议记录整理为结构化格式：
+
+## 会议概况
+- 时间：{{date}}
+- 参与人：{{participants}}
+- 主持人：{{host}}
+
+## 议题与讨论
+{{meeting_notes}}
+
+请按以下结构输出：
+
+### 📌 核心决议
+（逐条列出本次会议达成的决定）
+
+### ✅ 行动项
+| 编号 | 任务 | 负责人 | 截止日期 |
+|------|------|--------|----------|
+
+### 💬 待跟进问题
+（列出尚未解决、需要后续跟进的问题）</div>
+      </div>
+      <div>
+        <div class="modal-section-title">变量说明</div>
+        <div class="modal-vars">
+          <div class="modal-var"><code>{{date}}</code><span>会议日期</span></div>
+          <div class="modal-var"><code>{{participants}}</code><span>参与人员名单</span></div>
+          <div class="modal-var"><code>{{host}}</code><span>主持人姓名</span></div>
+          <div class="modal-var"><code>{{meeting_notes}}</code><span>原始会议记录内容</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="modal-section-title">标签</div>
+        <div class="modal-tags">
+          <span class="modal-tag">结构化输出</span>
+          <span class="modal-tag">中文</span>
+          <span class="modal-tag">总结</span>
+          <span class="modal-tag">Markdown</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="modal-btn-primary">用此模板新建 Skill</button>
+      <button class="modal-btn-sec">复制提示词</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.cat-chip').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.cat-chip').forEach(e => e.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.src-tab').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.src-tab').forEach(e => e.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+
+  function openModal() { document.getElementById('modalMask').classList.add('open'); }
+  function closeModal() { document.getElementById('modalMask').classList.remove('open'); }
+
+  function useTemplate(prompt) {
+    window.location.href = 'create.html?prompt=' + encodeURIComponent(prompt);
+  }
+
+  // 弹层里的"用此模板新建 Skill"按钮
+  document.querySelector('.modal-btn-primary').addEventListener('click', () => {
+    const prompt = document.getElementById('modalPrompt').textContent;
+    useTemplate(prompt);
+  });
+</script>
+<script src="sidebar.js"></script>
+<script>SkillBuilderSidebar.render('templates')</script>
+</body>
+</html>

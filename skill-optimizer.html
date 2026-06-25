@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>数据可视化技能 — 技能工坊</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #1f2329;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    /* ══ 顶部工具栏（三栏对齐）══════════════════════════════ */
+    .topbar {
+      height: 48px;
+      background: #fff;
+      display: flex;
+      align-items: stretch;
+      flex-shrink: 0;
+      border-bottom: 1px solid #eceef3;
+    }
+    /* 左段：固定340px，与左栏同宽 */
+    .tb-left {
+      width: 340px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 2px;
+      padding: 0 10px;
+      border-right: 1px solid #eceef3;
+    }
+    /* 中段：与中栏联动，默认0宽收起 */
+    .tb-middle {
+      width: 0; flex-shrink: 0; overflow: hidden;
+      display: flex; align-items: center;
+      border-right: 0px solid #eceef3;
+      transition: width .2s ease, border-right-width .2s ease, padding .2s ease;
+      padding: 0;
+    }
+    .tb-middle.fb-open {
+      width: 200px;
+      border-right-width: 1px;
+      padding: 0 8px;
+    }
+    /* 右段：占满剩余宽度 */
+    .tb-right {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center;
+      padding: 0 12px; gap: 4px;
+    }
+    .tb-right-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+    .tb-icon {
+      width: 30px; height: 30px; border-radius: 6px; border: none;
+      background: transparent; color: #9aa1af; font-size: 13px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .12s, color .12s; flex-shrink: 0;
+    }
+    .tb-icon:hover { background: #f4f5f8; color: #1f2329; }
+    .tb-sep { width: 1px; height: 18px; background: #eceef3; margin: 0 6px; flex-shrink: 0; }
+    .tb-skill-icon {
+      width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+    }
+    .tb-skill-name { font-size: 13px; font-weight: 600; color: #1f2329; margin: 0 4px; white-space: nowrap; }
+    .tb-chevron { font-size: 10px; color: #9aa1af; cursor: pointer; }
+    .tb-tab {
+      height: 30px; padding: 0 12px; border-radius: 6px; border: none;
+      background: transparent; color: #9aa1af; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+      transition: background .12s, color .12s;
+    }
+    .tb-tab:hover { background: #f4f5f8; color: #1f2329; }
+    .tb-tab.active { background: #f0f1f5; color: #1f2329; font-weight: 600; }
+    .tb-tab i { font-size: 11px; }
+    .tb-tab-close {
+      margin-left: 4px; font-size: 14px; line-height: 1;
+      color: #9aa1af; border-radius: 3px; padding: 0 2px;
+    }
+    .tb-tab-close:hover { color: #1f2329; background: #e3e6ee; }
+    .tb-btn-outline {
+      height: 28px; padding: 0 10px; border-radius: 6px;
+      border: 1px solid #e3e6ee; background: #fff;
+      color: #4f555f; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      transition: border-color .12s, background .12s;
+    }
+    .tb-btn-outline:hover { border-color: #b8bfcf; background: #f4f5f8; }
+    .tb-btn-primary {
+      height: 28px; padding: 0 14px; border-radius: 6px; border: none;
+      background: #18181B; color: #fff; font-size: 12px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      transition: background .12s;
+    }
+    .tb-btn-primary:hover { background: #3F3F46; }
+
+    /* ══ 主体三栏 ═════════════════════════════════════════════ */
+    .body {
+      flex: 1; min-height: 0;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ══ 左栏 ════════════════════════════════════════════════ */
+    .left {
+      width: 340px; flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid #eceef3;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 顶部固定区（测试结论卡片） */
+    .left-fixed {
+      flex-shrink: 0;
+      padding: 12px 14px 0;
+    }
+
+    /* 消息流滚动区（流式优化输出） */
+    .left-messages {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* 左栏AI消息气泡 */
+    .left-ai-msg {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .left-ai-content {
+      font-size: 13px; line-height: 1.75; color: #1f2329;
+    }
+    .left-ai-content h3 {
+      font-size: 13px; font-weight: 700; color: #1f2329;
+      margin: 10px 0 5px;
+    }
+    .left-ai-content h3:first-child { margin-top: 0; }
+    .left-ai-content p { color: #374151; margin-bottom: 5px; }
+    .left-ai-content ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+    .left-ai-content li { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; color: #374151; line-height: 1.6; }
+    .left-ai-content li::before { content: '•'; color: #2563EB; font-size: 16px; line-height: 1.3; flex-shrink: 0; }
+    .left-ai-content strong { font-weight: 700; color: #111827; }
+
+    /* 左栏思考中 */
+    .left-thinking {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: #9aa1af; padding: 2px 0;
+    }
+    .left-thinking .fa-spin { animation: spin 1.2s linear infinite; }
+
+    /* 能力说明滚动区（兼容旧引用，现在不用了） */
+    .left-content {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 16px 18px 12px;
+    }
+    .section-title {
+      font-size: 13px; font-weight: 700; color: #1f2329;
+      margin-bottom: 10px;
+    }
+    .ability-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 16px; }
+    .ability-h {
+      font-size: 13px; font-weight: 600; color: #1f2329;
+      margin: 8px 0 3px;
+    }
+    .ability-h:first-child { margin-top: 0; }
+    .ability-item {
+      display: flex; align-items: flex-start; gap: 7px;
+      font-size: 12.5px; color: #687083; line-height: 1.55;
+      padding: 1px 0;
+    }
+    .ability-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: #c7d2fe; flex-shrink: 0; margin-top: 6px;
+    }
+
+    /* 代码块 */
+    .code-block { margin-bottom: 16px; }
+    .code-block-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .code-lang-tag {
+      font-size: 11px; font-weight: 500; color: #687083;
+      background: #f0f1f5; border-radius: 4px;
+      padding: 2px 8px; display: inline-block;
+    }
+    .code-copy-btn {
+      width: 24px; height: 24px; border-radius: 5px; border: none;
+      background: transparent; color: #9aa1af; font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .code-copy-btn:hover { background: #f4f5f8; color: #4f555f; }
+    .code-wrap {
+      background: #f8f9fb;
+      border-radius: 8px;
+      overflow: hidden;
+      font-family: "JetBrains Mono", "Fira Code", "Menlo", monospace;
+      font-size: 11.5px; line-height: 1.7;
+    }
+    .code-line {
+      display: flex; padding: 0 12px;
+    }
+    .code-line:hover { background: rgba(0,0,0,.03); }
+    .ln { width: 22px; text-align: right; margin-right: 14px; color: #c0c5d0; flex-shrink: 0; user-select: none; }
+    .code-line code { flex: 1; white-space: pre; color: #374151; }
+    .t-comment { color: #9ca3af; font-style: italic; }
+    .t-key { color: #7c3aed; }
+    .t-str { color: #059669; }
+    .t-fn { color: #2563eb; }
+    .t-kw { color: #db2777; }
+    .t-num { color: #d97706; }
+    .t-arg { color: #d97706; }
+
+    /* 打包文件 */
+    .pack-section { padding-top: 12px; border-top: 1px solid #f0f1f5; }
+    .pack-label { font-size: 12px; font-weight: 700; color: #1f2329; margin-bottom: 6px; }
+    .pack-path { font-size: 11.5px; color: #687083; font-family: monospace; margin-bottom: 8px; }
+    .pack-actions { display: flex; align-items: center; gap: 4px; }
+    .pack-icon-btn {
+      width: 26px; height: 26px; border-radius: 5px; border: none;
+      background: transparent; color: #b0b7c3; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pack-icon-btn:hover { background: #f4f5f8; color: #4f555f; }
+
+    /* 左下 chat 输入 */
+    .left-chat {
+      flex-shrink: 0;
+      border-top: 1px solid #f0f1f5;
+    }
+    .chat-hint {
+      padding: 10px 16px 0;
+      font-size: 12px; color: #c7cbd5;
+    }
+    .chat-textarea {
+      width: 100%; border: none; outline: none; resize: none;
+      padding: 8px 16px; font-size: 13px; font-family: inherit;
+      color: #1f2329; line-height: 1.6; min-height: 64px;
+    }
+    .chat-textarea::placeholder { color: #d1d5db; }
+    .chat-bottom {
+      height: 44px; display: flex; align-items: center; gap: 6px;
+      padding: 0 12px; border-top: 1px solid #f4f5f8;
+    }
+    .chat-icon-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid #e3e6ee; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #687083; font-size: 12px;
+      transition: border-color .12s;
+    }
+    .chat-icon-btn:hover { border-color: #b8bfcf; }
+    .chat-model {
+      display: flex; align-items: center; gap: 3px;
+      font-size: 12px; color: #687083; cursor: pointer;
+      padding: 4px 6px; border-radius: 5px;
+    }
+    .chat-model:hover { background: #f4f5f8; }
+    .chat-voice {
+      width: 26px; height: 26px; border: none; background: transparent;
+      color: #c0c5d0; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .chat-send {
+      margin-left: auto; width: 30px; height: 30px; border-radius: 8px;
+      border: none; background: #18181B; color: #fff; font-size: 12px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .chat-send:hover { background: #1f2d3d; }
+
+    /* ══ 中栏 ════════════════════════════════════════════════ */
+    .middle {
+      width: 0; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      border-right: 0px solid #eceef3;
+      overflow: hidden;
+      transition: width .2s ease, border-right-width .2s ease;
+    }
+    .middle.fb-open {
+      width: 200px;
+      border-right-width: 1px;
+    }
+
+    /* 文件浏览器 */
+    .filebrowser {
+      background: #fff;
+      display: flex; flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .fb-toolbar {
+      height: 38px; display: flex; align-items: center;
+      padding: 0 10px; border-bottom: 1px solid #eceef3;
+      gap: 4px; flex-shrink: 0;
+    }
+    .fb-tab {
+      height: 26px; padding: 0 10px; border-radius: 5px; border: none;
+      background: transparent; color: #9aa1af; font-size: 12px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      transition: color .12s;
+    }
+    .fb-tab.active {
+      color: #1f2329;
+      border-bottom: 2px solid #2563EB;
+      border-radius: 0;
+    }
+    .fb-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+    .fb-btn {
+      width: 26px; height: 26px; border-radius: 5px; border: none;
+      background: transparent; color: #9aa1af; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .1s, color .1s;
+    }
+    .fb-btn:hover { background: #f4f5f8; color: #4f555f; }
+    .fb-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+    /* 深度缩进基础 */
+    .ft-folder, .ft-file {
+      display: flex; align-items: center; gap: 6px;
+      height: 28px; border-radius: 5px;
+      font-size: 12.5px; color: #374151; cursor: pointer;
+      transition: background .1s; padding-right: 8px;
+      position: relative;
+    }
+    .ft-folder:hover, .ft-file:hover { background: #f4f5f8; }
+    .ft-file.active { background: #eef2ff; color: #374151; }
+
+    /* 深度缩进 */
+    .ft-depth-0 { padding-left: 8px; }
+    .ft-depth-1 { padding-left: 24px; }
+    .ft-depth-2 { padding-left: 40px; }
+    .ft-depth-3 { padding-left: 56px; }
+
+    /* 竖线（depth≥1 时左侧的连接线） */
+    .ft-depth-1::before { content:''; position:absolute; left:14px; top:0; bottom:0; width:1px; background:#e5e7eb; }
+    .ft-depth-2::before { content:''; position:absolute; left:30px; top:0; bottom:0; width:1px; background:#e5e7eb; }
+    .ft-depth-3::before { content:''; position:absolute; left:46px; top:0; bottom:0; width:1px; background:#e5e7eb; }
+
+    /* 文件夹箭头 */
+    .ft-arrow { font-size: 9px; color: #9aa1af; width: 10px; flex-shrink: 0; }
+    /* 文件夹图标 */
+    .ft-ficon { color: #f59e0b; font-size: 13px; flex-shrink: 0; }
+    /* MD 文件徽章 */
+    .ft-md-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 14px; border-radius: 3px;
+      border: 1.5px solid #b45309; color: #b45309;
+      font-size: 8px; font-weight: 700; font-style: normal;
+      flex-shrink: 0; line-height: 1;
+    }
+    /* 普通文件图标 */
+    .ft-file-icon { font-size: 11px; color: #9aa1af; flex-shrink: 0; }
+    /* 圆点（root level 文件前的点） */
+    .ft-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      border: 1.5px solid #9aa1af; flex-shrink: 0;
+    }
+    .ft-folder span, .ft-file span { font-size: 12.5px; color: #374151; }
+
+    /* 预览 tab 区（白色，下半） */
+    .preview-tab-area {
+      flex: 1; min-height: 0;
+      background: #fff;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .preview-tabs {
+      height: 38px; display: flex; align-items: center;
+      padding: 0 8px; border-bottom: 1px solid #f0f1f5; gap: 2px; flex-shrink: 0;
+    }
+    .ptab {
+      height: 28px; padding: 0 12px; border-radius: 6px; border: none;
+      background: transparent; font-size: 12px; color: #9aa1af; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      transition: background .1s, color .1s;
+    }
+    .ptab:hover { background: #f4f5f8; color: #4f555f; }
+    .ptab.active { background: #f0f1f5; color: #1f2329; font-weight: 600; }
+    .ptab i { font-size: 10px; }
+    .ptab-new {
+      width: 26px; height: 26px; border-radius: 5px; border: none;
+      background: transparent; color: #9aa1af; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ptab-new:hover { background: #f4f5f8; }
+    .preview-tab-body {
+      flex: 1; background: #fff;
+    }
+
+    /* ══ 右栏 ════════════════════════════════════════════════ */
+    .right {
+      flex: 1; min-width: 480px;
+      background: #fff;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .right-header {
+      height: 48px; display: flex; align-items: center; gap: 8px;
+      padding: 0 16px; border-bottom: 1px solid #f0f1f5; flex-shrink: 0;
+    }
+    .right-title { font-size: 14px; font-weight: 700; color: #1f2329; }
+    .right-header-btn {
+      width: 28px; height: 28px; border-radius: 6px; border: none;
+      background: transparent; color: #9aa1af; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .right-header-btn:hover { background: #f4f5f8; color: #4f555f; }
+
+    /* 摘要条 */
+    .summary-bar {
+      background: #f8f9fb;
+      border-bottom: 1px solid #f0f1f5;
+      padding: 8px 16px;
+      display: flex; align-items: flex-start; gap: 8px;
+      flex-shrink: 0;
+    }
+    .summary-back {
+      width: 22px; height: 22px; border-radius: 5px; border: none;
+      background: transparent; color: #9aa1af; font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+    }
+    .summary-text { font-size: 12px; color: #687083; line-height: 1.55; flex: 1; }
+    .summary-ai-tag {
+      font-size: 10px; color: #9aa1af; white-space: nowrap;
+      margin-top: 2px; flex-shrink: 0;
+    }
+
+    /* 预览消息区 */
+    .preview-messages {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* 用户消息 */
+    .msg-user { display: flex; justify-content: flex-end; }
+    .msg-user-bubble {
+      max-width: 80%;
+      background: #f0f1f5;
+      border-radius: 12px 12px 2px 12px;
+      padding: 10px 14px;
+      font-size: 13px; color: #1f2329; line-height: 1.6;
+      display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap;
+    }
+    .skill-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #dbeafe; color: #2563eb;
+      border-radius: 5px; padding: 1px 7px;
+      font-size: 11.5px; font-weight: 600; margin-right: 5px;
+      white-space: nowrap;
+    }
+    .skill-tag i { font-size: 9px; }
+
+    /* AI 消息 */
+    .msg-ai { display: flex; flex-direction: column; gap: 10px; }
+    .msg-ai-content {
+      font-size: 13.5px; line-height: 1.8; color: #1f2329;
+    }
+    .msg-ai-content h1 {
+      font-size: 16px; font-weight: 700; color: #111; margin-bottom: 8px;
+    }
+    .msg-ai-content h2 {
+      font-size: 14px; font-weight: 700; color: #1f2329; margin: 14px 0 6px;
+    }
+    .msg-ai-content p { color: #374151; margin-bottom: 6px; }
+    .msg-ai-content ul { padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+    .msg-ai-content li {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 13.5px; color: #374151; line-height: 1.65;
+    }
+    .msg-ai-content li::before {
+      content: '•'; color: #2563EB; font-size: 17px; line-height: 1.25; flex-shrink: 0;
+    }
+    .msg-ai-content strong { font-weight: 700; color: #111827; }
+    .msg-ai-content em { font-style: normal; font-weight: 700; color: #111827; }
+    .msg-actions {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .msg-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; color: #16a34a; margin-right: 4px;
+    }
+    .msg-status i { font-size: 11px; }
+    .msg-icon-btn {
+      width: 26px; height: 26px; border-radius: 5px; border: none;
+      background: transparent; color: #c0c5d0; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .msg-icon-btn:hover { background: #f4f5f8; color: #4f555f; }
+
+    /* 预览输入框 */
+    .preview-input-area {
+      border-top: 1px solid #f0f1f5;
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+    .preview-input-box {
+      border: 1px solid #e3e6ee; border-radius: 12px; overflow: hidden;
+    }
+    .preview-textarea {
+      width: 100%; border: none; outline: none; resize: none;
+      padding: 12px 14px; font-size: 13px; font-family: inherit;
+      color: #1f2329; line-height: 1.6; min-height: 48px;
+    }
+    .preview-textarea::placeholder { color: #c7cbd5; }
+    .preview-input-bottom {
+      height: 40px; display: flex; align-items: center; gap: 6px;
+      padding: 0 10px; border-top: 1px solid #f4f5f8;
+    }
+    .preview-icon-btn {
+      width: 26px; height: 26px; border-radius: 5px;
+      border: 1px solid #e3e6ee; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #687083; font-size: 11px;
+    }
+    .preview-send {
+      margin-left: auto; width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: #c0c5d0; color: #fff; font-size: 12px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .12s;
+    }
+    .preview-send.active { background: #111827; }
+
+    /* ══ Tips 轮播面板 ════════════════════════════════════════ */
+    .tips-panel {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+      background: #f5f6f8;
+      padding: 32px 48px;
+      overflow: hidden;
+    }
+
+    /* 顶部图标 */
+    .tips-hero-icon {
+      width: 72px; height: 72px; border-radius: 20px;
+      background: linear-gradient(145deg, #ffffff 0%, #f0f2ff 100%);
+      box-shadow: 0 4px 20px rgba(79,110,247,.12), 0 1px 4px rgba(0,0,0,.06);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .tips-hero-icon svg { filter: drop-shadow(0 1px 2px rgba(79,110,247,.2)); }
+    /* 旋转光晕 */
+    .tips-hero-icon::before {
+      content: '';
+      position: absolute; inset: -3px;
+      border-radius: 23px;
+      background: conic-gradient(from 0deg, #2563EB 0%, #a78bfa 25%, #f97316 50%, #2563EB 100%);
+      opacity: .18;
+      animation: spin 4s linear infinite;
+      z-index: -1;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .tips-generating {
+      font-size: 15px; color: #687083; letter-spacing: .02em;
+    }
+    .tips-generating strong { color: #1f2329; }
+
+    /* 滚动窗口：固定显示3条 */
+    .tips-carousel {
+      width: 100%; max-width: 540px;
+      height: 216px; /* 3 × (62px card + 10px gap) - 10px */
+      overflow: hidden;
+      position: relative;
+    }
+    /* 顶部和底部渐隐遮罩 */
+    .tips-carousel::before,
+    .tips-carousel::after {
+      content: ''; position: absolute; left: 0; right: 0; z-index: 2; height: 40px;
+      pointer-events: none;
+    }
+    .tips-carousel::before { top: 0; background: linear-gradient(to bottom, #f5f6f8, transparent); }
+    .tips-carousel::after  { bottom: 0; background: linear-gradient(to top, #f5f6f8, transparent); }
+
+    .tips-track {
+      display: flex; flex-direction: column; gap: 10px;
+      position: absolute; top: 0; left: 0; right: 0;
+      transition: transform .7s cubic-bezier(.4,0,.2,1);
+    }
+    .tip-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+      flex-shrink: 0;
+      height: 62px;
+    }
+    .tip-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .tip-icon.blue   { background: #eef2ff; color: #2563EB; }
+    .tip-icon.green  { background: #ecfdf5; color: #059669; }
+    .tip-icon.orange { background: #fff7ed; color: #f97316; }
+    .tip-icon.purple { background: #f5f3ff; color: #7c3aed; }
+    .tip-icon.pink   { background: #fdf2f8; color: #db2777; }
+    .tip-icon.teal   { background: #f0fdfa; color: #0d9488; }
+    .tip-body { flex: 1; min-width: 0; }
+    .tip-title { font-size: 13px; font-weight: 600; color: #1f2329; margin-bottom: 2px; }
+    .tip-desc  { font-size: 12px; color: #9aa1af; line-height: 1.5;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ══ 历史版本面板 ════════════════════════════════════════ */
+    .history-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: -8px;
+      width: 340px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.06);
+      border: 1px solid #eceef3;
+      z-index: 999;
+      overflow: hidden;
+    }
+    .history-panel.open { display: block; }
+    .hp-header {
+      padding: 16px 20px 8px;
+      border-bottom: 1px solid #f0f1f5;
+    }
+    .hp-branch {
+      font-size: 13px; font-weight: 600; color: #1f2329;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .hp-search-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f1f5;
+    }
+    .hp-search {
+      flex: 1; display: flex; align-items: center; gap: 8px;
+      background: #f5f6f8; border-radius: 8px; padding: 7px 12px;
+      font-size: 13px; color: #9aa1af;
+    }
+    .hp-search input {
+      border: none; outline: none; background: transparent;
+      font-size: 13px; color: #1f2329; flex: 1;
+    }
+    .hp-search input::placeholder { color: #c0c5d0; }
+    .hp-date-btn {
+      height: 34px; padding: 0 14px; border-radius: 8px;
+      border: 1px solid #eceef3; background: #fff;
+      font-size: 12px; color: #687083; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .hp-date-btn:hover { background: #f5f6f8; }
+    .hp-body {
+      display: flex; height: 280px;
+    }
+    .hp-sidebar {
+      width: 140px; flex-shrink: 0;
+      border-right: 1px solid #f0f1f5;
+      padding: 10px 8px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .hp-side-item {
+      padding: 7px 12px; border-radius: 7px;
+      font-size: 13px; font-weight: 500; color: #1f2329;
+      cursor: pointer;
+    }
+    .hp-side-item:hover { background: #f5f6f8; }
+    .hp-side-item.active { background: #f0f1f5; }
+    .hp-side-item.muted { color: #9aa1af; font-weight: 400; }
+    .hp-commits {
+      flex: 1; overflow-y: auto; padding: 12px 20px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .hp-date-label {
+      font-size: 12px; color: #9aa1af;
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 8px; margin-top: 4px;
+    }
+    .hp-commit {
+      padding: 12px 14px; border-radius: 10px;
+      border: 1px solid #f0f1f5;
+      margin-bottom: 8px; cursor: pointer;
+      transition: background .12s, border-color .12s;
+      position: relative;
+    }
+    .hp-commit:hover { background: #f8f9fb; border-color: #e3e6ee; }
+    .hp-commit-title {
+      font-size: 13px; font-weight: 600; color: #1f2329; margin-bottom: 6px;
+    }
+    .hp-commit-meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: #9aa1af;
+    }
+    /* hover 操作按钮 */
+    .hp-commit-actions {
+      display: none;
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      gap: 6px;
+    }
+    .hp-commit:hover .hp-commit-actions { display: flex; }
+    .hp-action-btn {
+      height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid #e3e6ee;
+      background: #fff; font-size: 12px; color: #4f555f; cursor: pointer;
+      display: flex; align-items: center; gap: 5px; white-space: nowrap;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      transition: background .1s, border-color .1s;
+    }
+    .hp-action-btn:hover { background: #f4f5f8; border-color: #c8cdd8; }
+
+    /* ══ 右栏版本控制视图 ════════════════════════════════════ */
+    .vc-view {
+      display: none; flex-direction: column;
+      flex: 1; min-height: 0; overflow: hidden;
+    }
+    .vc-view.active { display: flex; }
+    .vc-header {
+      height: 48px; display: flex; align-items: center; gap: 8px;
+      padding: 0 16px; border-bottom: 1px solid #f0f1f5; flex-shrink: 0;
+    }
+    .vc-back {
+      width: 26px; height: 26px; border-radius: 6px; border: none;
+      background: transparent; color: #9aa1af; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .vc-back:hover { background: #f4f5f8; color: #1f2329; }
+    .vc-branch { font-size: 13px; color: #9aa1af; display: flex; align-items: center; gap: 5px; }
+    .vc-title { font-size: 14px; font-weight: 700; color: #1f2329; }
+    .vc-commit-bar {
+      padding: 12px 16px; border-bottom: 1px solid #f0f1f5; flex-shrink: 0;
+      display: flex; align-items: center; gap: 10px; background: #f8f9fb;
+    }
+    .vc-hash { font-family: monospace; font-size: 12px; font-weight: 700; color: #1f2329; }
+    .vc-commit-msg { font-size: 13px; color: #687083; flex: 1; }
+    .vc-restore-btn {
+      height: 28px; padding: 0 12px; border-radius: 7px; border: 1px solid #e3e6ee;
+      background: #fff; font-size: 12px; color: #4f555f; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .vc-restore-btn:hover { background: #f4f5f8; }
+    .vc-meta { font-size: 12px; color: #9aa1af; }
+    .vc-stats { padding: 12px 16px; font-size: 13px; font-weight: 600; color: #1f2329; flex-shrink: 0; }
+    .vc-files { flex: 1; overflow-y: auto; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .vc-file-row {
+      border: 1px solid #f0f1f5; border-radius: 10px; overflow: hidden;
+    }
+    .vc-file-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; font-size: 12.5px; color: #1f2329;
+      cursor: pointer; background: #fff;
+    }
+    .vc-file-header:hover { background: #f8f9fb; }
+    .vc-file-icon { font-size: 11px; color: #9aa1af; }
+    .vc-file-name { flex: 1; font-family: monospace; }
+    .vc-stat-add { color: #16a34a; font-weight: 600; font-size: 12px; }
+    .vc-stat-del { color: #dc2626; font-weight: 600; font-size: 12px; }
+    .vc-badge {
+      font-size: 11px; padding: 1px 8px; border-radius: 4px; font-weight: 600;
+    }
+    .vc-badge.mod { background: #fff7ed; color: #f97316; }
+    .vc-badge.add { background: #ecfdf5; color: #16a34a; }
+    .vc-diff {
+      display: none; background: #f8f9fb;
+      font-family: monospace; font-size: 11.5px; line-height: 1.7;
+      padding: 8px 14px;
+    }
+    .vc-diff.open { display: block; }
+    .vc-diff-line { display: flex; gap: 12px; }
+    .vc-diff-line.del { background: #fff1f2; color: #dc2626; }
+    .vc-diff-line.add { background: #f0fdf4; color: #16a34a; }
+    .vc-diff-ln { width: 24px; text-align: right; color: #c0c5d0; flex-shrink: 0; }
+    .vc-diff-code { flex: 1; white-space: pre; }
+
+    /* ══ 文件内容视图 ═══════════════════════════════════════ */
+    .file-view {
+      display: none; flex-direction: column;
+      flex: 1; min-height: 0; overflow: hidden;
+    }
+    .file-view.active { display: flex; }
+    .file-view-header {
+      height: 36px; display: flex; align-items: center; gap: 8px;
+      padding: 0 16px; border-bottom: 1px solid #f0f1f5; flex-shrink: 0;
+      background: #fafbfc;
+    }
+    .fv-breadcrumb {
+      font-size: 12px; color: #9aa1af; display: flex; align-items: center; gap: 4px;
+    }
+    .fv-breadcrumb span { color: #687083; }
+    .fv-breadcrumb .fv-current { color: #1f2329; font-weight: 600; }
+    .fv-actions { margin-left: auto; display: flex; gap: 6px; }
+    .fv-action-btn {
+      width: 26px; height: 26px; border-radius: 6px; border: none;
+      background: transparent; color: #9aa1af; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fv-action-btn:hover { background: #f0f1f5; color: #1f2329; }
+    .file-view-body {
+      flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12.5px; line-height: 1.7;
+    }
+    .fv-line {
+      display: flex; align-items: flex-start; padding: 0 16px; gap: 0;
+      min-height: 21px;
+    }
+    .fv-line:hover { background: #f8f9fb; }
+    .fv-ln {
+      width: 36px; min-width: 36px; text-align: right; color: #c8cdd6;
+      font-size: 11.5px; padding-right: 16px; user-select: none; flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .fv-code { flex: 1; white-space: pre-wrap; word-break: break-all; }
+    /* Markdown syntax colors */
+    .fv-h1 { color: #1f2329; font-weight: 700; font-size: 13.5px; }
+    .fv-h2 { color: #1f2329; font-weight: 700; }
+    .fv-h3 { color: #4f555f; font-weight: 600; }
+    .fv-meta { color: #9aa1af; }
+    .fv-key { color: #2563eb; }
+    .fv-val { color: #059669; }
+    .fv-bullet { color: #687083; }
+    .fv-bold { color: #1f2329; font-weight: 600; }
+    .fv-comment { color: #9aa1af; font-style: italic; }
+
+    /* ══ 回滚弹窗 ════════════════════════════════════════════ */
+    .rollback-mask {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.35); z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    .rollback-mask.open { display: flex; }
+    .rollback-modal {
+      background: #fff; border-radius: 16px;
+      width: 540px; padding: 32px 32px 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+      position: relative;
+    }
+    .rb-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 28px; height: 28px; border-radius: 7px; border: none;
+      background: transparent; color: #9aa1af; font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .rb-close:hover { background: #f4f5f8; }
+    .rb-title { font-size: 18px; font-weight: 700; color: #1f2329; margin-bottom: 16px; }
+    .rb-card {
+      background: #f8f9fb; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;
+    }
+    .rb-card-top { font-size: 13px; font-weight: 600; color: #1f2329; margin-bottom: 4px; }
+    .rb-card-sub { font-size: 12px; color: #9aa1af; }
+    .rb-desc { font-size: 13px; font-weight: 700; color: #1f2329; margin-bottom: 10px; }
+    .rb-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 24px; }
+    .rb-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #1f2329; }
+    .rb-item::before { content: '•'; color: #1f2329; flex-shrink: 0; }
+    .rb-item.warn { color: #f97316; }
+    .rb-item.warn::before { color: #f97316; }
+    .rb-footer { display: flex; justify-content: flex-end; gap: 10px; }
+    .rb-cancel {
+      height: 36px; padding: 0 20px; border-radius: 9px;
+      border: 1px solid #e3e6ee; background: #fff;
+      font-size: 13px; color: #4f555f; cursor: pointer;
+    }
+    .rb-cancel:hover { background: #f4f5f8; }
+    .rb-confirm {
+      height: 36px; padding: 0 24px; border-radius: 9px; border: none;
+      background: #18181B; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .rb-confirm:hover { background: #3F3F46; }
+    .hp-hash {
+      font-family: monospace; font-size: 11px;
+      background: #f0f1f5; border-radius: 4px; padding: 1px 6px;
+      color: #687083;
+    }
+    .hp-avatar { font-size: 14px; }
+    .hp-time { margin-left: auto; }
+
+    /* 左栏流式渲染辅助 */
+    .stream-cursor {
+      display: inline-block; width: 2px; height: 14px;
+      background: #2563EB; margin-left: 1px; vertical-align: middle;
+      animation: blink .7s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ══ 测试报告折叠卡片 ══════════════════════════════════════ */
+    .report-card {
+      margin: 12px 14px 0;
+      border: 1px solid #e3e6ee;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .report-card-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: #f8f9fb;
+      cursor: pointer;
+      user-select: none;
+    }
+    .report-card-header:hover { background: #f0f1f5; }
+    .report-card-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #FEF2F2; color: #DC2626;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 4px;
+    }
+    .report-card-title {
+      font-size: 12px; font-weight: 700; color: #1f2329; flex: 1;
+    }
+    .report-card-score {
+      font-size: 13px; font-weight: 800; color: #1f2329;
+    }
+    .report-card-toggle {
+      font-size: 10px; color: #9aa1af;
+      transition: transform .2s;
+    }
+    .report-card.collapsed .report-card-toggle { transform: rotate(-90deg); }
+    .report-card-body {
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+      background: #fff;
+      border-top: 1px solid #f0f1f5;
+    }
+    .report-card.collapsed .report-card-body { display: none; }
+    .rc-overview {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    }
+    .rc-ov-item {
+      background: #f8f9fb; border-radius: 8px;
+      padding: 8px 6px; text-align: center;
+    }
+    .rc-ov-val { font-size: 16px; font-weight: 800; color: #1f2329; line-height: 1; }
+    .rc-ov-val.green { color: #16A34A; }
+    .rc-ov-val.red   { color: #DC2626; }
+    .rc-ov-label { font-size: 10px; color: #9aa1af; margin-top: 3px; }
+    .rc-divider { height: 1px; background: #f0f1f5; }
+    .rc-section-title {
+      font-size: 11px; font-weight: 700; color: #687083;
+      text-transform: uppercase; letter-spacing: .4px;
+      margin-bottom: 6px;
+    }
+    .rc-dim-row {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 5px;
+    }
+    .rc-dim-label { font-size: 11px; color: #687083; width: 52px; flex-shrink: 0; }
+    .rc-dim-track { flex: 1; height: 4px; background: #f0f1f5; border-radius: 2px; overflow: hidden; }
+    .rc-dim-fill  { height: 100%; background: #18181B; border-radius: 2px; }
+    .rc-dim-val   { font-size: 11px; font-weight: 700; color: #1f2329; width: 24px; text-align: right; }
+    .rc-issues { display: flex; flex-direction: column; gap: 5px; }
+    .rc-issue {
+      display: flex; align-items: flex-start; gap: 6px;
+      font-size: 11px; color: #374151; line-height: 1.5;
+      padding: 5px 8px; border-radius: 6px; background: #f8f9fb;
+    }
+    .rc-issue i { font-size: 10px; margin-top: 1px; flex-shrink: 0; }
+    .rc-issue.high i { color: #DC2626; }
+    .rc-issue.mid  i { color: #F59E0B; }
+
+    /* ══ 左栏测试结论卡片 ════════════════════════════════════ */
+    .test-conclusion-card {
+      background: linear-gradient(135deg, #f0f4ff 0%, #f8f9ff 100%);
+      border: 1px solid #dbe4ff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+    .tc-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .tc-icon { font-size: 13px; color: #2563EB; }
+    .tc-title { font-size: 12px; font-weight: 700; color: #1f2329; flex: 1; }
+    .tc-score {
+      font-size: 18px; font-weight: 800; color: #1f2329; line-height: 1;
+    }
+    .tc-score span { font-size: 12px; font-weight: 500; color: #9aa1af; margin-left: 2px; }
+    .tc-stats { display: flex; gap: 12px; margin-bottom: 8px; }
+    .tc-stat { font-size: 11.5px; color: #687083; }
+    .tc-stat strong { color: #1f2329; font-weight: 700; }
+    .tc-stat.bad strong { color: #DC2626; }
+    .tc-issues { display: flex; flex-direction: column; gap: 4px; }
+    .tc-issue {
+      display: flex; align-items: flex-start; gap: 5px;
+      font-size: 11px; color: #374151; line-height: 1.5;
+      padding: 4px 7px; border-radius: 5px; background: rgba(255,255,255,.7);
+    }
+    .tc-issue i { font-size: 9px; margin-top: 2px; flex-shrink: 0; }
+    .tc-issue.high i { color: #DC2626; }
+    .tc-issue.mid  i { color: #F59E0B; }
+    .tc-footer {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid #dbe4ff;
+      font-size: 11px; color: #9aa1af; display: flex; align-items: center; gap: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 顶部工具栏（三段对齐三栏） -->
+<header class="topbar">
+  <!-- 左段：与左栏同宽 -->
+  <div class="tb-left">
+    <button class="tb-icon" id="backBtn" title="返回技能工坊"><i class="fas fa-chevron-left"></i></button>
+    <div class="tb-sep"></div>
+    <div class="tb-skill-icon">📋</div>
+    <span class="tb-skill-name">会议纪要整理专家</span>
+    <i class="fas fa-chevron-down tb-chevron"></i>
+    <div class="tb-sep"></div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:2px">
+    <div style="position:relative">
+      <button class="tb-icon" id="toggleHistory" title="历史版本"><i class="fas fa-history"></i></button>
+      <!-- 历史版本面板 -->
+      <div class="history-panel" id="historyPanel">
+        <div class="hp-commits" style="height:280px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+          <div class="hp-date-label"><i class="fas fa-circle" style="font-size:8px;color:#c0c5d0"></i> Commits on 18/06/2026</div>
+          <div class="hp-commit" data-hash="a3f8c2d1" data-msg="feat: 创建数据可视化图表生成技能">
+            <div class="hp-commit-title">feat: 创建数据可视化图表生成技能</div>
+            <div class="hp-commit-meta"><span class="hp-hash">a3f8c2d1</span><span class="hp-avatar">🟠</span><span>贾世霖</span><span class="hp-time">14:32</span></div>
+            <div class="hp-commit-actions">
+              <button class="hp-action-btn rollback-trigger"><i class="fas fa-undo-alt"></i> 回到该版本</button>
+              <button class="hp-action-btn view-diff-trigger"><i class="fas fa-file-alt"></i> 查看修改记录</button>
+            </div>
+          </div>
+          <div class="hp-commit" data-hash="786e0b7f" data-msg="feat: 添加多图表类型支持与主题配置">
+            <div class="hp-commit-title">feat: 添加多图表类型支持与主题配置</div>
+            <div class="hp-commit-meta"><span class="hp-hash">786e0b7f</span><span class="hp-avatar">🟠</span><span>贾世霖</span><span class="hp-time">14:18</span></div>
+            <div class="hp-commit-actions">
+              <button class="hp-action-btn rollback-trigger"><i class="fas fa-undo-alt"></i> 回到该版本</button>
+              <button class="hp-action-btn view-diff-trigger"><i class="fas fa-file-alt"></i> 查看修改记录</button>
+            </div>
+          </div>
+          <div class="hp-commit" data-hash="4bbcbc7b" data-msg="Initial commit">
+            <div class="hp-commit-title">Initial commit</div>
+            <div class="hp-commit-meta"><span class="hp-hash">4bbcbc7b</span><span class="hp-avatar">🟠</span><span>贾世霖</span><span class="hp-time">14:05</span></div>
+            <div class="hp-commit-actions">
+              <button class="hp-action-btn rollback-trigger"><i class="fas fa-undo-alt"></i> 回到该版本</button>
+              <button class="hp-action-btn view-diff-trigger"><i class="fas fa-file-alt"></i> 查看修改记录</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="tb-icon" id="toggleFilebrowser" title="文件浏览器"><i class="fas fa-folder"></i></button>
+    </div><!-- close margin-left:auto wrapper -->
+  </div>
+  <!-- 中段：与中栏联动，默认收起 -->
+  <div class="tb-middle" id="tbMiddle">
+    <!-- 展开后显示 Projects 标签 -->
+    <span style="font-size:12px;font-weight:600;color:#9aa1af;white-space:nowrap">Projects</span>
+  </div>
+  <!-- 右段：预览 tab + 右侧按钮 -->
+  <div class="tb-right">
+    <button class="tb-tab active" id="tabPreview" onclick="switchRightTab('preview')"><i class="fas fa-play-circle"></i> 沙箱预览</button>
+    <button class="tb-tab" id="tabFile" style="display:none" onclick="switchRightTab('file')">
+      <i class="far fa-file-alt"></i> <span id="tabFileName">SKILL.md</span>
+      <span class="tb-tab-close" onclick="event.stopPropagation();closeFileTab()">×</span>
+    </button>
+    <button class="tb-tab" id="tabVc" style="display:none" onclick="switchRightTab('vc')">
+      <i class="fas fa-code-branch"></i> 版本控制
+      <span class="tb-tab-close" id="tabVcClose" onclick="event.stopPropagation();closeVcTab()">×</span>
+    </button>
+    <div class="tb-right-actions">
+      <button class="tb-btn-primary"><i class="fas fa-paper-plane"></i> 发布</button>
+    </div>
+  </div>
+</header>
+
+<!-- 主体 -->
+<div class="body">
+
+  <!-- 左栏 -->
+  <div class="left">
+
+    <!-- 顶部固定：测试结论卡片 -->
+    <div class="left-fixed">
+      <div class="test-conclusion-card" id="conclusionCard">
+        <div class="tc-header">
+          <i class="fas fa-file-chart-line tc-icon"></i>
+          <div class="tc-title">测试报告 · 会议纪要整理专家 #1</div>
+          <div class="tc-score">4.1<span>/ 5</span></div>
+        </div>
+        <div class="tc-stats">
+          <div class="tc-stat">通过率 <strong>83%</strong></div>
+          <div class="tc-stat">总用例 <strong>10</strong> 条</div>
+          <div class="tc-stat bad">失败 <strong>2</strong> 条</div>
+        </div>
+        <div class="tc-issues">
+          <div class="tc-issue high"><i class="fas fa-circle"></i>TC-003 / TC-009：非中文输入时语言判断错误（语言质量 3.7 分）</div>
+          <div class="tc-issue mid"><i class="fas fa-circle"></i>行动项缺「负责人」字段，完整性维度仅 4.0 分</div>
+        </div>
+        <div class="tc-footer" id="tcFooter"><i class="fas fa-magic"></i> AI 正在基于此报告生成优化方案…</div>
+      </div>
+    </div>
+
+    <!-- 流式消息区 -->
+    <div class="left-messages" id="leftMessages"></div>
+
+    <!-- 左下输入框 -->
+    <div class="left-chat">
+      <div class="chat-hint">基于测试报告，可继续要求 AI 调整优化方向。</div>
+      <textarea class="chat-textarea" id="leftChatInput" placeholder="输入优化需求…"></textarea>
+      <div class="chat-bottom">
+        <div class="chat-icon-btn" title="上传文件"><i class="fas fa-file-upload"></i></div>
+        <button class="chat-send" id="leftChatSend"><i class="fas fa-arrow-up"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中栏 -->
+  <div class="middle" id="middleCol">
+    <!-- 文件浏览器（深色） -->
+    <div class="filebrowser">
+      <div class="fb-toolbar">
+        <div class="fb-actions" style="margin-left:0;width:100%;justify-content:space-around">
+          <button class="fb-btn" title="上传"><i class="fas fa-upload"></i></button>
+          <button class="fb-btn" title="下载"><i class="fas fa-download"></i></button>
+          <button class="fb-btn" title="新建文件夹"><i class="fas fa-folder-plus"></i></button>
+          <button class="fb-btn" title="复制"><i class="far fa-copy"></i></button>
+        </div>
+      </div>
+      <div class="fb-body">
+        <!-- feishu-doc-writing/ -->
+        <div class="ft-folder ft-depth-0">
+          <i class="fas fa-chevron-down ft-arrow"></i>
+          <i class="fas fa-folder-open ft-ficon"></i>
+          <span>feishu-doc-writing</span>
+        </div>
+        <!-- assets/ -->
+        <div class="ft-folder ft-depth-1">
+          <i class="fas fa-chevron-down ft-arrow"></i>
+          <i class="fas fa-folder-open ft-ficon"></i>
+          <span>assets</span>
+        </div>
+        <!-- templates/ -->
+        <div class="ft-folder ft-depth-2">
+          <i class="fas fa-chevron-down ft-arrow"></i>
+          <i class="fas fa-folder-open ft-ficon"></i>
+          <span>templates</span>
+        </div>
+        <div class="ft-file ft-depth-3"><i class="ft-dot"></i><i class="ft-md-icon">M↓</i><span>project-proposal.md</span></div>
+        <div class="ft-file ft-depth-3"><i class="ft-dot"></i><i class="ft-md-icon">M↓</i><span>weekly-report.md</span></div>
+        <!-- references/ -->
+        <div class="ft-folder ft-depth-1">
+          <i class="fas fa-chevron-down ft-arrow"></i>
+          <i class="fas fa-folder-open ft-ficon"></i>
+          <span>references</span>
+        </div>
+        <div class="ft-file ft-depth-2"><i class="ft-dot"></i><i class="ft-md-icon">M↓</i><span>format-guide.md</span></div>
+        <!-- root files -->
+        <div class="ft-file ft-depth-1 active" id="ftSkill"><i class="ft-dot"></i><i class="ft-md-icon">M↓</i><span>SKILL.md</span></div>
+        <div class="ft-file ft-depth-0" id="ftJoyagent"><i class="ft-dot"></i><i class="fas fa-file ft-file-icon"></i><span>.joyagent</span></div>
+        <div class="ft-file ft-depth-0" id="ftGitignore"><i class="ft-dot" style="border-color:#ef4444"></i><i class="fas fa-diamond" style="color:#ef4444;font-size:9px"></i><span>.gitignore</span></div>
+        <div class="ft-file ft-depth-0"><i class="ft-dot"></i><i class="fas fa-file ft-file-icon"></i><span>feishu-doc-writing.skill</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 右栏 -->
+  <div class="right">
+    <!-- 版本控制视图（tab 切换时显示） -->
+    <div class="vc-view" id="vcView">
+      <div class="vc-commit-bar">
+        <span class="vc-hash" id="vcHash">786e0b7f</span>
+        <span class="vc-commit-msg" id="vcMsg">feat: 添加多图表类型支持与主题配置</span>
+        <button class="vc-restore-btn vc-rollback-trigger"><i class="fas fa-undo-alt"></i> 回到该版本</button>
+        <span class="vc-meta">贾世霖 · 16分钟前</span>
+      </div>
+      <div class="vc-stats">变更文件数：<strong>3</strong></div>
+      <div class="vc-files">
+        <div class="vc-file-row">
+          <div class="vc-file-header" onclick="this.nextElementSibling.classList.toggle('open')">
+            <i class="vc-file-icon fas fa-file-alt"></i>
+            <span class="vc-file-name">.joyagent</span>
+            <span class="vc-stat-add">+5</span>&nbsp;<span class="vc-stat-del">−5</span>
+            <span class="vc-badge mod">修改</span>
+            <i class="fas fa-chevron-down" style="font-size:10px;color:#9aa1af;margin-left:4px"></i>
+          </div>
+          <div class="vc-diff">
+            <div class="vc-diff-line del"><span class="vc-diff-ln">1</span><span class="vc-diff-code">name=""</span></div>
+            <div class="vc-diff-line del"><span class="vc-diff-ln">2</span><span class="vc-diff-code">description=""</span></div>
+            <div class="vc-diff-line add"><span class="vc-diff-ln">1</span><span class="vc-diff-code">name = "chart-generator"</span></div>
+            <div class="vc-diff-line add"><span class="vc-diff-ln">2</span><span class="vc-diff-code">description = "专业数据可视化图表生成技能"</span></div>
+          </div>
+        </div>
+        <div class="vc-file-row">
+          <div class="vc-file-header" onclick="this.nextElementSibling.classList.toggle('open')">
+            <i class="vc-file-icon fas fa-file-alt" style="color:#f59e0b"></i>
+            <span class="vc-file-name">chart-generator/SKILL.md</span>
+            <span class="vc-stat-add">+66</span>&nbsp;<span class="vc-stat-del">−0</span>
+            <span class="vc-badge add">新增</span>
+            <i class="fas fa-chevron-down" style="font-size:10px;color:#9aa1af;margin-left:4px"></i>
+          </div>
+          <div class="vc-diff">
+            <div class="vc-diff-line add"><span class="vc-diff-ln">1</span><span class="vc-diff-code"># chart-generator</span></div>
+            <div class="vc-diff-line add"><span class="vc-diff-ln">2</span><span class="vc-diff-code"></span></div>
+            <div class="vc-diff-line add"><span class="vc-diff-ln">3</span><span class="vc-diff-code">专业级数据可视化图表生成技能</span></div>
+          </div>
+        </div>
+        <div class="vc-file-row">
+          <div class="vc-file-header" onclick="this.nextElementSibling.classList.toggle('open')">
+            <i class="vc-file-icon fas fa-file-alt" style="color:#f59e0b"></i>
+            <span class="vc-file-name">chart-generator/references/data-format.md</span>
+            <span class="vc-stat-add">+45</span>&nbsp;<span class="vc-stat-del">−0</span>
+            <span class="vc-badge add">新增</span>
+            <i class="fas fa-chevron-down" style="font-size:10px;color:#9aa1af;margin-left:4px"></i>
+          </div>
+          <div class="vc-diff">
+            <div class="vc-diff-line add"><span class="vc-diff-ln">1</span><span class="vc-diff-code"># 数据格式规范</span></div>
+            <div class="vc-diff-line add"><span class="vc-diff-ln">2</span><span class="vc-diff-code"></span></div>
+            <div class="vc-diff-line add"><span class="vc-diff-ln">3</span><span class="vc-diff-code">支持 JSON / CSV 格式输入</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 预览面板（同 skill-editor 原版） -->
+    <div id="previewPane" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+
+      <!-- Tips 轮播（默认显示） -->
+      <div class="tips-panel" id="tipsPanel">
+        <div class="tips-hero-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="16" stroke="#e0e7ff" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <path d="M20 5L10 21h8l-2 10 12-16h-8l2-10z" fill="url(#g1opt)" stroke="none"/>
+            <circle cx="28" cy="10" r="1.5" fill="#a78bfa" opacity=".7"/>
+            <circle cx="8"  cy="26" r="1"   fill="#f97316" opacity=".6"/>
+            <circle cx="27" cy="27" r="1"   fill="#2563EB" opacity=".5"/>
+            <defs>
+              <linearGradient id="g1opt" x1="10" y1="5" x2="22" y2="31" gradientUnits="userSpaceOnUse">
+                <stop offset="0%"   stop-color="#818cf8"/>
+                <stop offset="100%" stop-color="#2563EB"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="tips-generating">技能<strong>优化</strong>进行中...</div>
+        <div class="tips-carousel" id="tipsCarousel">
+          <div class="tips-track" id="tipsTrack"></div>
+        </div>
+      </div>
+
+      <!-- 摘要条 -->
+      <div class="summary-bar" id="previewSummary" style="display:none">
+        <button class="summary-back"><i class="fas fa-chevron-left"></i></button>
+        <div class="summary-text">基于测试报告 #1，AI 正在生成针对「语言感知」和「完整性」问题的优化方案</div>
+        <div class="summary-ai-tag">对话由 AI 生成</div>
+      </div>
+
+      <!-- 对话区 -->
+      <div class="preview-messages" id="previewMessages" style="display:none"></div>
+
+      <!-- 输入框 -->
+      <div class="preview-input-area" id="previewInputArea" style="display:none">
+        <div class="preview-input-box">
+          <textarea class="preview-textarea" id="previewInput" placeholder="发送消息…"></textarea>
+          <div class="preview-input-bottom">
+            <div class="preview-icon-btn"><i class="fas fa-at"></i></div>
+            <div class="preview-icon-btn"><i class="fas fa-paperclip"></i></div>
+            <div class="preview-icon-btn"><i class="fas fa-lightbulb"></i></div>
+            <button class="preview-send" id="previewSend"><i class="fas fa-arrow-up"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /previewPane -->
+
+    <!-- 文件内容视图 -->
+    <div class="file-view" id="fileView">
+      <div class="file-view-header">
+        <div class="fv-breadcrumb">
+          <i class="fas fa-folder" style="font-size:11px"></i>
+          <span id="fvPath">feishu-doc-writing</span>
+          <i class="fas fa-chevron-right" style="font-size:9px;color:#c8cdd6"></i>
+          <span class="fv-current" id="fvFileName">SKILL.md</span>
+        </div>
+        <div class="fv-actions">
+          <button class="fv-action-btn" title="复制"><i class="far fa-copy"></i></button>
+          <button class="fv-action-btn" title="在编辑器中打开"><i class="fas fa-external-link-alt"></i></button>
+        </div>
+      </div>
+      <div class="file-view-body" id="fileViewBody"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- 回滚确认弹窗 -->
+<div class="rollback-mask" id="rollbackMask">
+  <div class="rollback-modal">
+    <button class="rb-close" id="rbClose"><i class="fas fa-times"></i></button>
+    <div class="rb-title" id="rbTitle">回滚至 786e0b7f 版本</div>
+    <div class="rb-card">
+      <div class="rb-card-top" id="rbCardTop">回滚版本 786e0b7f &nbsp; 贾世霖 · 17分钟前</div>
+      <div class="rb-card-sub" id="rbCardSub">feat: 添加多图表类型支持与主题配置</div>
+    </div>
+    <div class="rb-desc">此操作会：</div>
+    <div class="rb-list">
+      <div class="rb-item warn">该分支下的其余对话也同步回滚</div>
+      <div class="rb-item">工作区恢复至选中的 checkpoint 状态</div>
+      <div class="rb-item">撤销该版本之后的所有更改</div>
+      <div class="rb-item">历史记录会保留，可随时回滚到其他版本</div>
+    </div>
+    <div class="rb-footer">
+      <button class="rb-cancel" id="rbCancel">取消</button>
+      <button class="rb-confirm">回滚</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 返回
+  document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = 'create.html';
+  });
+
+  // ── Tab 切换 ───────────────────────────────────────────────
+  const vcView = document.getElementById('vcView');
+  const fileView = document.getElementById('fileView');
+  const previewPane = document.getElementById('previewPane');
+
+  function switchRightTab(tab) {
+    const tabPreview = document.getElementById('tabPreview');
+    const tabVc = document.getElementById('tabVc');
+    const tabFile = document.getElementById('tabFile');
+    // hide all
+    tabPreview.classList.remove('active');
+    tabVc.classList.remove('active');
+    tabFile.classList.remove('active');
+    previewPane.style.display = 'none';
+    vcView.classList.remove('active');
+    fileView.classList.remove('active');
+
+    if (tab === 'vc') {
+      tabVc.classList.add('active');
+      vcView.classList.add('active');
+    } else if (tab === 'file') {
+      tabFile.classList.add('active');
+      fileView.classList.add('active');
+    } else {
+      tabPreview.classList.add('active');
+      previewPane.style.display = 'flex';
+    }
+  }
+
+  function closeVcTab() {
+    document.getElementById('tabVc').style.display = 'none';
+    switchRightTab('preview');
+  }
+
+  function closeFileTab() {
+    document.getElementById('tabFile').style.display = 'none';
+    // deselect file tree
+    document.querySelectorAll('.ft-file').forEach(f => f.classList.remove('active'));
+    switchRightTab('preview');
+  }
+
+  function openVcView(hash, msg) {
+    document.getElementById('vcHash').textContent = hash;
+    document.getElementById('vcMsg').textContent = msg;
+    // 显示 vc tab 并激活
+    const tabVc = document.getElementById('tabVc');
+    tabVc.style.display = '';
+    switchRightTab('vc');
+    // 关闭历史面板
+    document.getElementById('historyPanel').classList.remove('open');
+    document.getElementById('toggleHistory').style.color = '';
+    document.getElementById('toggleHistory').style.background = '';
+  }
+
+  // ── 版本控制：版本控制视图内的回到该版本 ─────────────────
+  document.querySelector('.vc-rollback-trigger').addEventListener('click', () => {
+    const hash = document.getElementById('vcHash').textContent;
+    const msg  = document.getElementById('vcMsg').textContent;
+    openRollback(hash, msg);
+  });
+
+  // ── 回滚弹窗 ──────────────────────────────────────────────
+  const rollbackMask = document.getElementById('rollbackMask');
+
+  function openRollback(hash, msg) {
+    document.getElementById('rbTitle').textContent = `回滚至 ${hash} 版本`;
+    document.getElementById('rbCardTop').textContent = `回滚版本 ${hash}   贾世霖 · 刚刚`;
+    document.getElementById('rbCardSub').textContent = msg;
+    rollbackMask.classList.add('open');
+  }
+
+  document.getElementById('rbClose').addEventListener('click', () => rollbackMask.classList.remove('open'));
+  document.getElementById('rbCancel').addEventListener('click', () => rollbackMask.classList.remove('open'));
+  rollbackMask.addEventListener('click', e => { if (e.target === rollbackMask) rollbackMask.classList.remove('open'); });
+
+  // ── commit 卡片按钮事件委托 ────────────────────────────────
+  document.getElementById('historyPanel').addEventListener('click', e => {
+    const card = e.target.closest('.hp-commit');
+    if (!card) return;
+    const hash = card.dataset.hash;
+    const msg  = card.dataset.msg;
+    if (e.target.closest('.rollback-trigger')) {
+      openRollback(hash, msg);
+    } else if (e.target.closest('.view-diff-trigger')) {
+      openVcView(hash, msg);
+    }
+  });
+
+  // 历史版本面板
+  const toggleHistoryBtn = document.getElementById('toggleHistory');
+  const historyPanel = document.getElementById('historyPanel');
+  toggleHistoryBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = historyPanel.classList.toggle('open');
+    toggleHistoryBtn.style.color = open ? '#2563EB' : '';
+    toggleHistoryBtn.style.background = open ? '#eef2ff' : '';
+  });
+  document.addEventListener('click', (e) => {
+    if (!historyPanel.contains(e.target) && e.target !== toggleHistoryBtn) {
+      historyPanel.classList.remove('open');
+      toggleHistoryBtn.style.color = '';
+      toggleHistoryBtn.style.background = '';
+    }
+  });
+
+  // 文件浏览器展开/收起（同步顶栏中段）
+  const toggleFbBtn = document.getElementById('toggleFilebrowser');
+  const middleCol = document.getElementById('middleCol');
+  const tbMiddle = document.getElementById('tbMiddle');
+  toggleFbBtn.addEventListener('click', () => {
+    const open = middleCol.classList.toggle('fb-open');
+    tbMiddle.classList.toggle('fb-open', open);
+    toggleFbBtn.style.color = open ? '#2563EB' : '';
+    toggleFbBtn.style.background = open ? '#eef2ff' : '';
+  });
+
+  // ── 文件内容数据 ──────────────────────────────────────────
+  const FILE_CONTENTS = {
+    'SKILL.md': {
+      path: 'feishu-doc-writing',
+      lines: [
+        { cls: 'fv-meta', text: '---' },
+        { cls: 'fv-key',  text: 'name', suffix: ': ', valCls: 'fv-val', val: 'feishu-doc-writing' },
+        { cls: 'fv-key',  text: 'description', suffix: ': ', valCls: 'fv-val', val: '飞书云文档写作助手；当用户需要撰写周报、项目提案、工作总结或需要文档模板时使用' },
+        { cls: 'fv-meta', text: '---' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h1',   text: '# 飞书云文档写作技能' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h2',   text: '## 任务目标' },
+        { cls: 'fv-bullet', text: '- 本 Skill 用于：快速生成结构化的飞书云文档内容' },
+        { cls: 'fv-bullet', text: '- 能力包含：周报写作、项目提案撰写、文档模板提供、格式规范指导' },
+        { cls: 'fv-bullet', text: '- 触发条件：用户表达"写周报"、"写项目提案"、"帮我整理下工作"、"需要一个文档模板"' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h2',   text: '## 前置准备' },
+        { cls: 'fv-bullet', text: '- 无需额外依赖，模板已内置于 assets/ 目录' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h2',   text: '## 操作步骤' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h3',   text: '### 周报撰写流程' },
+        { cls: 'fv-bullet', text: '1. **收集信息**：向用户确认本周工作内容、关键成果、数据指标' },
+        { cls: 'fv-bullet', text: '2. **结构填充**：按模板结构填充内容' },
+        { cls: 'fv-bullet', text: '   - 工作总结：列出 3-5 项核心任务，说明完成情况' },
+        { cls: 'fv-bullet', text: '   - 数据指标：填入实际数据、计算环比变化' },
+        { cls: 'fv-bullet', text: '   - 下周计划：按优先级排列，标注时间节点' },
+        { cls: 'fv-bullet', text: '   - 问题建议：提炼需要支持的事项' },
+        { cls: 'fv-bullet', text: '3. **格式优化**：应用飞书格式规范，确保结构清晰' },
+        { cls: 'fv-bullet', text: '4. **输出交付**：生成可直接粘贴到飞书文档的 Markdown 内容' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h3',   text: '### 项目提案撰写流程' },
+        { cls: 'fv-bullet', text: '1. **明确背景**：与用户确认项目背景、业务痛点、战略意义' },
+        { cls: 'fv-bullet', text: '2. **目标设定**：协助用户设定 SMART 目标，确定衡量指标' },
+        { cls: 'fv-bullet', text: '3. **方案设计**：引导用户描述功能模块、业务流程、技术方案' },
+        { cls: 'fv-bullet', text: '4. **计划排期**：帮助制定里程碑和时间节点' },
+        { cls: 'fv-bullet', text: '5. **风险评估**：识别风险并制定应对策略' },
+        { cls: 'fv-bullet', text: '6. **整合输出**：生成完整项目提案文档' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h3',   text: '### 模板选择' },
+        { cls: 'fv-bullet', text: '- **周报模板**：适合周期性工作总结和计划汇报' },
+        { cls: 'fv-bullet', text: '- **项目提案模板**：适合新项目立项、资源申请、方案评审' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h2',   text: '## 使用示例' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h3',   text: '### 示例1：周报' },
+        { cls: 'fv-bullet', text: '- 场景/输入：用户说"帮我写这周周报，这周完成了用户调研、写了需求文档、开了两次评审会"' },
+        { cls: 'fv-bullet', text: '- 预期产出：结构完整的周报 Markdown，包含工作总结、数据指标、下周计划' },
+        { cls: 'fv-bullet', text: '- 关键要点：需要询问具体数据指标、下周具体任务、是否有问题需要支持' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h3',   text: '### 示例2：项目提案' },
+        { cls: 'fv-bullet', text: '- 场景/输入：用户说"我们要做一个用户增长的项目，需要写提案申请资源"' },
+        { cls: 'fv-bullet', text: '- 预期产出：完整的项目提案文档，包含背景、目标、方案、计划、资源、风险' },
+        { cls: 'fv-bullet', text: '- 关键要点：需要引导用户明确目标数据、方案亮点、资源预算' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h3',   text: '### 示例3：模板直接获取' },
+        { cls: 'fv-bullet', text: '- 场景/输入：用户说"给我一个周报模板"' },
+        { cls: 'fv-bullet', text: '- 预期产出：直接提供周报模板内容或文件路径' },
+        { cls: 'fv-bullet', text: '- 关键要点：直接读取 assets/templates/weekly-report.md 输出' },
+        { cls: '',        text: '' },
+        { cls: 'fv-h2',   text: '## 资源索引' },
+        { cls: 'fv-bullet', text: '- 周报模板：见 assets/templates/weekly-report.md' },
+        { cls: 'fv-bullet', text: '- 项目提案模板：见 assets/templates/project-proposal.md' },
+        { cls: 'fv-bullet', text: '- 格式规范：见 references/format-guide.md（何时读取：需要了解飞书格式规范或写作要点时）' },
+      ]
+    },
+    '.joyagent': {
+      path: 'feishu-doc-writing',
+      lines: [
+        { cls: 'fv-key', text: 'skill_id', suffix: ' = ', valCls: 'fv-val', val: '"feishu-doc-writing"' },
+        { cls: 'fv-key', text: 'version',  suffix: ' = ', valCls: 'fv-val', val: '"1.2.0"' },
+        { cls: 'fv-key', text: 'runtime',  suffix: ' = ', valCls: 'fv-val', val: '"joyagent-v2"' },
+        { cls: 'fv-key', text: 'entry',    suffix: ' = ', valCls: 'fv-val', val: '"SKILL.md"' },
+        { cls: '',       text: '' },
+        { cls: 'fv-h3',  text: '[permissions]' },
+        { cls: 'fv-key', text: 'network',  suffix: ' = ', valCls: 'fv-val', val: 'false' },
+        { cls: 'fv-key', text: 'filesystem', suffix: ' = ', valCls: 'fv-val', val: 'true' },
+      ]
+    },
+    '.gitignore': {
+      path: 'feishu-doc-writing',
+      lines: [
+        { cls: 'fv-comment', text: '# 依赖和构建' },
+        { cls: 'fv-bullet',  text: 'node_modules/' },
+        { cls: 'fv-bullet',  text: 'dist/' },
+        { cls: '',           text: '' },
+        { cls: 'fv-comment', text: '# 环境配置' },
+        { cls: 'fv-bullet',  text: '.env' },
+        { cls: 'fv-bullet',  text: '.env.local' },
+        { cls: '',           text: '' },
+        { cls: 'fv-comment', text: '# 编辑器' },
+        { cls: 'fv-bullet',  text: '.DS_Store' },
+        { cls: 'fv-bullet',  text: '.vscode/' },
+      ]
+    }
+  };
+
+  function renderFile(filename) {
+    const data = FILE_CONTENTS[filename];
+    if (!data) return;
+    document.getElementById('fvFileName').textContent = filename;
+    document.getElementById('fvPath').textContent = data.path;
+    document.getElementById('tabFileName').textContent = filename;
+    const body = document.getElementById('fileViewBody');
+    body.innerHTML = '';
+    data.lines.forEach((l, i) => {
+      const row = document.createElement('div');
+      row.className = 'fv-line';
+      const ln = document.createElement('span');
+      ln.className = 'fv-ln';
+      ln.textContent = i + 1;
+      row.appendChild(ln);
+      const code = document.createElement('span');
+      code.className = 'fv-code';
+      if (l.val !== undefined) {
+        // key: val format
+        code.innerHTML = `<span class="${l.cls || ''}">${l.text}</span><span class="fv-meta">${l.suffix}</span><span class="${l.valCls}">${l.val}</span>`;
+      } else {
+        code.innerHTML = `<span class="${l.cls || ''}">${l.text}</span>`;
+      }
+      row.appendChild(code);
+      body.appendChild(row);
+    });
+  }
+
+  function openFileView(filename, fileEl) {
+    document.querySelectorAll('.ft-file').forEach(el => el.classList.remove('active'));
+    if (fileEl) fileEl.classList.add('active');
+    renderFile(filename);
+    const tabFile = document.getElementById('tabFile');
+    tabFile.style.display = '';
+    switchRightTab('file');
+  }
+
+  // 文件树点击
+  document.querySelectorAll('.ft-file').forEach(el => {
+    el.addEventListener('click', () => {
+      const nameEl = el.querySelector('span');
+      if (!nameEl) return;
+      const filename = nameEl.textContent.trim();
+      if (FILE_CONTENTS[filename]) {
+        openFileView(filename, el);
+      } else {
+        document.querySelectorAll('.ft-file').forEach(f => f.classList.remove('active'));
+        el.classList.add('active');
+      }
+    });
+  });
+
+
+  // ══ Tips 轮播数据 ════════════════════════════════════════
+  const TIPS = [
+    { icon:'fas fa-language',    color:'blue',   title:'语言感知优化', desc:'新增「始终以用户输入语言作答」指令，修复多语言输出错误' },
+    { icon:'fas fa-list-check',  color:'green',  title:'完整性强化',   desc:'输出模板增加必填字段标注，缺失时填"—"而非省略' },
+    { icon:'fas fa-shield-alt',  color:'purple', title:'边界处理新增', desc:'明确空输入与超长输入的降级策略，提升鲁棒性' },
+    { icon:'fas fa-magic',       color:'orange', title:'Few-shot 补充', desc:'新增中/英/混合语言示例各 2 条，增强语言对齐能力' },
+    { icon:'fas fa-check-double',color:'teal',   title:'准确性保持',   desc:'准确性维度已达 4.6 分，优化不影响核心提取能力' },
+    { icon:'fas fa-bolt',        color:'pink',   title:'快速验证',     desc:'优化完成后可一键跳回测试页面重跑用例，验证改善效果' },
+  ];
+
+  const tipsTrack = document.getElementById('tipsTrack');
+  function renderTips() {
+    const allTips = [...TIPS, ...TIPS];
+    allTips.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'tip-row';
+      row.innerHTML = `<div class="tip-icon ${t.color}"><i class="${t.icon}"></i></div>
+        <div class="tip-body"><div class="tip-title">${t.title}</div><div class="tip-desc">${t.desc}</div></div>`;
+      tipsTrack.appendChild(row);
+    });
+  }
+
+  let tipIdx = 0;
+  function advanceTip() {
+    tipIdx++;
+    const itemH = 72;
+    tipsTrack.style.transform = `translateY(-${tipIdx * itemH}px)`;
+    if (tipIdx >= TIPS.length) {
+      setTimeout(() => {
+        tipsTrack.style.transition = 'none';
+        tipIdx = 0;
+        tipsTrack.style.transform = 'translateY(0)';
+        setTimeout(() => { tipsTrack.style.transition = 'transform .7s cubic-bezier(.4,0,.2,1)'; }, 50);
+      }, 750);
+    }
+  }
+
+  // ══ 左栏流式渲染 ══════════════════════════════════════════
+  const leftStream = document.getElementById('leftStream');
+  const leftContent = document.querySelector('.left-content');
+
+  const OPT_BLOCKS = [
+    { delay: 1200, html: `<div class="section-title" style="margin-bottom:8px">正在生成优化版 Skill…</div>` },
+    { delay: 300,  html: `<div class="ability-h" style="margin-top:4px">优化要点</div><div class="ability-list" id="optPointList"></div>` },
+    { delay: 0, special: 'points' },
+    { delay: 400,  html: `<div class="section-title" style="margin-top:14px;margin-bottom:8px">优化后 SKILL.md 预览</div>
+<div class="code-block">
+  <div class="code-block-header">
+    <span class="code-lang-tag">markdown</span>
+    <button class="code-copy-btn" title="复制"><i class="far fa-copy"></i></button>
+  </div>
+  <div class="code-wrap" id="skillCodeWrap"></div>
+</div>` },
+    { delay: 0, special: 'skillCode' },
+    { delay: 300,  html: `<div class="pack-section">
+  <div class="pack-label">优化完成</div>
+  <div class="pack-path">会议纪要整理专家 / SKILL.md · 已修改 +12 −3 行</div>
+  <div class="pack-actions">
+    <button class="pack-icon-btn" title="点赞"><i class="fas fa-thumbs-up"></i></button>
+    <button class="pack-icon-btn" title="踩"><i class="fas fa-thumbs-down"></i></button>
+    <button class="pack-icon-btn" title="复制"><i class="far fa-copy"></i></button>
+  </div>
+</div>`, special: 'done' }
+  ];
+
+  const OPT_POINTS = [
+    { text: '语言感知：新增「始终以用户输入语言作答」指令' },
+    { text: '多语言 few-shot：补充中/英/混合语言示例各 2 条' },
+    { text: '完整性约束：输出模板增加必填字段列表（含负责人）' },
+    { text: '边界说明：明确空输入、超长输入的降级处理策略' },
+  ];
+
+  const SKILL_CODE_LINES = [
+    { ln:1,  code:'<span class="t-comment">---</span>' },
+    { ln:2,  code:'<span class="t-key">name</span>: <span class="t-str">meeting-notes-expert</span>' },
+    { ln:3,  code:'<span class="t-key">description</span>: <span class="t-str">会议纪要整理专家；将会议记录整理为标准纪要+行动项列表</span>' },
+    { ln:4,  code:'<span class="t-comment">---</span>' },
+    { ln:5,  code:'' },
+    { ln:6,  code:'<span class="t-fn">## 核心职责</span>' },
+    { ln:7,  code:'将输入的会议记录整理为包含行动项的标准纪要。' },
+    { ln:8,  code:'' },
+    { ln:9,  code:'<span class="t-fn">## 语言处理【优化】</span>' },
+    { ln:10, code:'- 始终以用户 **输入语言** 作答，不得自动切换为中文' },
+    { ln:11, code:'- 混合语言输入：以主体语言判断，超过 60% 即为主体语言' },
+    { ln:12, code:'' },
+    { ln:13, code:'<span class="t-fn">## 输出格式【优化】</span>' },
+    { ln:14, code:'必须包含以下字段（缺失时输出"—"而非省略该字段）：' },
+    { ln:15, code:'- 会议主题 / 日期 / 参会人员' },
+    { ln:16, code:'- 讨论要点（逐条列举）' },
+    { ln:17, code:'- 行动项：事项 · **负责人（必填，缺失时标"—"）** · 截止日期' },
+    { ln:18, code:'' },
+    { ln:19, code:'<span class="t-fn">## 边界处理【新增】</span>' },
+    { ln:20, code:'- 空输入：提示用户粘贴会议记录，不生成空纪要' },
+    { ln:21, code:'- 超长输入（>4000字）：分段处理，每段输出独立纪要' },
+  ];
+
+  function appendLeftBlock(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    while (tmp.firstChild) leftStream.appendChild(tmp.firstChild);
+    leftContent.scrollTop = leftContent.scrollHeight;
+  }
+
+  function streamLeftLines(lines, containerId, lineDelay, done) {
+    const wrap = document.getElementById(containerId);
+    if (!wrap) { done(); return; }
+    let i = 0;
+    function next() {
+      if (i >= lines.length) { done(); return; }
+      const l = lines[i++];
+      const row = document.createElement('div');
+      row.className = 'code-line';
+      row.innerHTML = `<span class="ln">${l.ln}</span><code>${l.code}</code>`;
+      wrap.appendChild(row);
+      leftContent.scrollTop = leftContent.scrollHeight;
+      setTimeout(next, lineDelay);
+    }
+    next();
+  }
+
+  function streamOptPoints(done) {
+    const list = document.getElementById('optPointList');
+    if (!list) { done(); return; }
+    let i = 0;
+    function next() {
+      if (i >= OPT_POINTS.length) { done(); return; }
+      const row = document.createElement('div');
+      row.className = 'ability-item';
+      row.innerHTML = `<div class="ability-dot" style="background:#2563EB"></div><span>${OPT_POINTS[i].text}</span>`;
+      list.appendChild(row);
+      leftContent.scrollTop = leftContent.scrollHeight;
+      i++;
+      setTimeout(next, 110);
+    }
+    next();
+  }
+
+  function runOptBlocks(idx, done) {
+    if (idx >= OPT_BLOCKS.length) { done && done(); return; }
+    const b = OPT_BLOCKS[idx];
+    const next = () => runOptBlocks(idx + 1, done);
+    if (b.special === 'done') {
+      setTimeout(() => { appendLeftBlock(b.html); done && done(); }, b.delay || 0);
+    } else if (b.html) {
+      setTimeout(() => { appendLeftBlock(b.html); setTimeout(next, 60); }, b.delay || 0);
+    } else if (b.special === 'points') {
+      setTimeout(() => streamOptPoints(next), 80);
+    } else if (b.special === 'skillCode') {
+      setTimeout(() => streamLeftLines(SKILL_CODE_LINES, 'skillCodeWrap', 70, next), 80);
+    }
+  }
+
+  // ══ 右栏：Tips 轮播完成后切换为预览对话 ═══════════════════
+  const tipsPanel = document.getElementById('tipsPanel');
+  const previewSummary = document.getElementById('previewSummary');
+  const previewMessages = document.getElementById('previewMessages');
+  const previewInputArea = document.getElementById('previewInputArea');
+
+  function showPreviewConversation() {
+    tipsPanel.style.display = 'none';
+    previewSummary.style.display = '';
+    previewMessages.style.display = '';
+    previewInputArea.style.display = '';
+    addPreviewMsg('user', '<span class="skill-tag"><i class="fas fa-bolt"></i> 会议纪要整理专家</span> 优化后版本如何处理英文输入？');
+    setTimeout(() => {
+      addPreviewMsg('ai', `<h2>优化后的语言处理</h2>
+<p>优化后的 SKILL.md 新增了「语言处理」章节，明确以下规则：</p>
+<ul>
+  <li>始终以用户<strong>输入语言</strong>作答，不自动切换为中文</li>
+  <li>混合语言时，以超过 60% 的主体语言作为输出语言</li>
+</ul>
+<p>TC-003 / TC-009 失败的根因已修复，预计通过率可提升至 <strong>95%+</strong>。</p>`);
+    }, 1000);
+  }
+
+  function addPreviewMsg(role, html) {
+    const el = document.createElement('div');
+    if (role === 'user') {
+      el.className = 'msg-user';
+      el.innerHTML = `<div class="msg-user-bubble">${html}</div>`;
+    } else {
+      el.className = 'msg-ai';
+      el.innerHTML = `<div class="msg-ai-content">${html}</div>
+        <div class="msg-actions">
+          <span class="msg-status"><i class="fas fa-check-circle"></i> 已完成</span>
+          <button class="msg-icon-btn"><i class="fas fa-thumbs-up"></i></button>
+          <button class="msg-icon-btn"><i class="fas fa-thumbs-down"></i></button>
+          <button class="msg-icon-btn"><i class="far fa-copy"></i></button>
+        </div>`;
+    }
+    previewMessages.appendChild(el);
+    previewMessages.scrollTop = previewMessages.scrollHeight;
+  }
+
+  // ══ 预览输入 ════════════════════════════════════════════
+  const previewInput = document.getElementById('previewInput');
+  const previewSend  = document.getElementById('previewSend');
+  if (previewInput && previewSend) {
+    previewInput.addEventListener('input', () => {
+      previewSend.classList.toggle('active', previewInput.value.trim().length > 0);
+    });
+    function sendPreview() {
+      const t = previewInput.value.trim();
+      if (!t) return;
+      addPreviewMsg('user', t);
+      previewInput.value = '';
+      previewSend.classList.remove('active');
+      setTimeout(() => {
+        addPreviewMsg('ai', '<p>已收到你的问题，正在分析优化后的 Skill 行为…</p>');
+      }, 900);
+    }
+    previewSend.addEventListener('click', sendPreview);
+    previewInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPreview(); }
+    });
+  }
+
+  // ══ 左栏输入 ════════════════════════════════════════════
+  const leftInput = document.getElementById('leftChatInput');
+  document.getElementById('leftChatSend').addEventListener('click', () => {
+    if (!leftInput.value.trim()) return;
+    leftInput.value = '';
+  });
+
+  // ══ 启动 ════════════════════════════════════════════════
+  function startOptimizer() {
+    renderTips();
+    const tipTimer = setInterval(advanceTip, 2200);
+    runOptBlocks(0, () => {
+      clearInterval(tipTimer);
+      const footer = document.querySelector('.tc-footer');
+      if (footer) footer.innerHTML = '<i class="fas fa-check-circle" style="color:#16a34a"></i> 优化方案已生成，可在右侧预览效果';
+      setTimeout(showPreviewConversation, 400);
+    });
+  }
+
+  startOptimizer();
+</script>
+</body>
+</html>

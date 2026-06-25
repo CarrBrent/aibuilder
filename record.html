@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>录屏生成 Skill — Skill Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── 全局布局 ─────────────────────────────────────────── */
+    .page-shell {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden; min-width: 0; background: #F8F8F9;
+    }
+
+    /* ── 顶部导航条 ───────────────────────────────────────── */
+    .rc-header {
+      height: 52px; background: #fff; border-bottom: 1px solid #EBEBEF;
+      display: flex; align-items: center; padding: 0 20px; gap: 10px;
+      flex-shrink: 0;
+    }
+    .rc-header-back {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: #71717A; text-decoration: none;
+      padding: 5px 8px; border-radius: 6px;
+      transition: background .12s, color .12s;
+    }
+    .rc-header-back:hover { background: #F4F5F8; color: #18181B; }
+    .rc-header-sep { width: 1px; height: 16px; background: #E4E4E7; }
+    .rc-header-title { font-size: 15px; font-weight: 700; color: #18181B; }
+    .rc-header-step {
+      margin-left: auto; display: flex; align-items: center; gap: 6px;
+    }
+    .rc-step-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #E4E4E7; transition: background .2s;
+    }
+    .rc-step-dot.active { background: #18181B; }
+    .rc-step-dot.done { background: #10B981; }
+
+    /* ── 内容区 ───────────────────────────────────────────── */
+    .rc-body {
+      flex: 1; overflow-y: auto; display: flex;
+      align-items: flex-start; justify-content: center;
+      padding: 48px 24px 64px;
+    }
+
+    /* ── 通用卡片 ─────────────────────────────────────────── */
+    .rc-card {
+      background: #fff; border-radius: 16px;
+      border: 1px solid #ECEEF3;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      width: 100%; max-width: 680px;
+      overflow: hidden;
+    }
+    .rc-card-hd {
+      padding: 28px 32px 0;
+    }
+    .rc-card-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .rc-card-icon.red { background: #FFF1F2; color: #E11D48; }
+    .rc-card-icon.green { background: #F0FDF4; color: #16A34A; }
+    .rc-card-icon.blue { background: #EFF6FF; color: #2563EB; }
+    .rc-card-title {
+      font-size: 22px; font-weight: 700; color: #18181B;
+      margin-bottom: 8px; letter-spacing: -.3px;
+    }
+    .rc-card-sub {
+      font-size: 14px; color: #71717A; line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .rc-card-bd { padding: 0 32px 32px; }
+
+    /* ── 阶段一：准备 ─────────────────────────────────────── */
+    .rc-desc-label {
+      font-size: 12px; font-weight: 600; color: #A1A1AA;
+      letter-spacing: .3px; margin-bottom: 8px;
+    }
+    .rc-desc-input {
+      width: 100%; border: 1.5px solid #E4E4E7; border-radius: 10px;
+      padding: 12px 14px; font-size: 14px; color: #18181B;
+      outline: none; font-family: inherit; resize: none; line-height: 1.6;
+      transition: border-color .15s, box-shadow .15s;
+      margin-bottom: 24px;
+    }
+    .rc-desc-input:focus { border-color: #A1A1AA; box-shadow: 0 0 0 3px rgba(0,0,0,.05); }
+    .rc-desc-input::placeholder { color: #C4C4CC; }
+
+    .rc-methods {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 8px;
+    }
+    .rc-method {
+      border: 2px solid #E4E4E7; border-radius: 12px;
+      padding: 20px 18px; cursor: pointer;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .rc-method:hover { border-color: #A1A1AA; background: #FAFAFA; }
+    .rc-method.selected { border-color: #18181B; background: #FAFAFA; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
+    .rc-method-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .rc-method-icon.red { background: #FFF1F2; color: #E11D48; }
+    .rc-method-icon.gray { background: #F4F4F5; color: #52525B; }
+    .rc-method-name { font-size: 14px; font-weight: 700; color: #18181B; }
+    .rc-method-desc { font-size: 12px; color: #71717A; line-height: 1.5; }
+    .rc-method-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 9999px;
+      background: #DCFCE7; color: #16A34A; margin-top: 2px;
+    }
+
+    .rc-tip {
+      font-size: 12px; color: #A1A1AA; margin-top: 16px;
+      display: flex; align-items: flex-start; gap: 6px; line-height: 1.55;
+    }
+    .rc-tip i { margin-top: 2px; flex-shrink: 0; }
+
+    /* ── 主按钮 ───────────────────────────────────────────── */
+    .rc-btn-primary {
+      width: 100%; padding: 13px 0; border-radius: 10px; border: none;
+      background: #18181B; color: #fff; font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 7px; transition: background .15s; margin-top: 24px;
+      letter-spacing: -.1px;
+    }
+    .rc-btn-primary:hover { background: #3F3F46; }
+    .rc-btn-primary:disabled { background: #D4D4D8; cursor: not-allowed; }
+    .rc-btn-secondary {
+      width: 100%; padding: 11px 0; border-radius: 10px;
+      border: 1.5px solid #E4E4E7; background: #fff;
+      color: #52525B; font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 6px; transition: border-color .15s, background .15s; margin-top: 10px;
+    }
+    .rc-btn-secondary:hover { border-color: #A1A1AA; background: #FAFAFA; }
+
+    /* ── 阶段二：录制中 ───────────────────────────────────── */
+    .rec-stage {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 48px 32px 40px; text-align: center;
+    }
+    .rec-indicator {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: #FFF1F2; border: 3px solid #FCA5A5;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; margin-bottom: 24px;
+    }
+    .rec-dot {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #E11D48; animation: recPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes recPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: .85; }
+    }
+    .rec-ring {
+      position: absolute; inset: -6px; border-radius: 50%;
+      border: 2px solid #FCA5A5; animation: recRing 1.4s ease-in-out infinite;
+    }
+    @keyframes recRing {
+      0%, 100% { transform: scale(1); opacity: .6; }
+      50% { transform: scale(1.08); opacity: .2; }
+    }
+    .rec-title {
+      font-size: 20px; font-weight: 700; color: #18181B; margin-bottom: 6px;
+    }
+    .rec-timer {
+      font-size: 36px; font-weight: 700; color: #E11D48;
+      font-variant-numeric: tabular-nums; letter-spacing: -.5px;
+      margin: 12px 0;
+      font-family: "JetBrains Mono", "Menlo", monospace;
+    }
+    .rec-sub { font-size: 13px; color: #71717A; margin-bottom: 32px; }
+    .rec-stop-btn {
+      padding: 12px 32px; border-radius: 10px; border: none;
+      background: #18181B; color: #fff; font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: background .15s;
+    }
+    .rec-stop-btn:hover { background: #E11D48; }
+    .rec-stop-btn i { font-size: 12px; }
+
+    /* ── 阶段三：预览 ─────────────────────────────────────── */
+    .preview-video-wrap {
+      width: 100%; border-radius: 10px; overflow: hidden;
+      background: #18181B; position: relative; margin-bottom: 20px;
+      aspect-ratio: 16/9;
+    }
+    .preview-video-wrap video {
+      width: 100%; height: 100%; object-fit: contain; display: block;
+    }
+    .preview-meta {
+      display: flex; align-items: center; gap: 20px;
+      padding: 14px 16px; background: #F8F8F9; border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .preview-meta-item { display: flex; align-items: center; gap: 7px; }
+    .preview-meta-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: #F0F1F5; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: #52525B; flex-shrink: 0;
+    }
+    .preview-meta-label { font-size: 11px; color: #A1A1AA; margin-bottom: 1px; }
+    .preview-meta-val { font-size: 13px; font-weight: 600; color: #18181B; }
+    .preview-desc-label {
+      font-size: 12px; font-weight: 600; color: #A1A1AA;
+      letter-spacing: .3px; margin-bottom: 8px;
+    }
+    .preview-desc-input {
+      width: 100%; border: 1.5px solid #E4E4E7; border-radius: 10px;
+      padding: 11px 14px; font-size: 14px; color: #18181B;
+      outline: none; font-family: inherit; resize: none; line-height: 1.6;
+      transition: border-color .15s;
+    }
+    .preview-desc-input:focus { border-color: #A1A1AA; }
+    .preview-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+    .preview-btn-analyze {
+      padding: 13px 0; border-radius: 10px; border: none;
+      background: #18181B; color: #fff; font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 7px; transition: background .15s;
+    }
+    .preview-btn-analyze:hover { background: #3F3F46; }
+    .preview-btn-redo {
+      padding: 11px 0; border-radius: 10px;
+      border: 1.5px solid #E4E4E7; background: #fff;
+      color: #52525B; font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 6px; transition: border-color .15s;
+    }
+    .preview-btn-redo:hover { border-color: #A1A1AA; }
+
+    /* ── 阶段四：分析中 ───────────────────────────────────── */
+    .analyze-stage {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 56px 32px 48px; text-align: center;
+    }
+    .analyze-spinner-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 28px; }
+    .analyze-ring {
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 3px solid #F0F1F5; border-top-color: #18181B;
+      animation: spin 1s linear infinite; position: absolute; inset: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .analyze-ring2 {
+      width: 56px; height: 56px; border-radius: 50%;
+      border: 2px solid #F0F1F5; border-bottom-color: #6366F1;
+      animation: spin 1.6s linear infinite reverse;
+      position: absolute; top: 8px; left: 8px;
+    }
+    .analyze-title {
+      font-size: 20px; font-weight: 700; color: #18181B; margin-bottom: 6px;
+    }
+    .analyze-step-label {
+      font-size: 13px; color: #6366F1; font-weight: 600; margin-bottom: 32px;
+      min-height: 20px; transition: opacity .3s;
+    }
+    .analyze-steps {
+      width: 100%; max-width: 380px; text-align: left;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .analyze-step-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: 9px;
+      background: #F8F8F9; transition: background .3s;
+    }
+    .analyze-step-row.done { background: #F0FDF4; }
+    .analyze-step-row.active { background: #EFF6FF; }
+    .analyze-step-icon {
+      width: 24px; height: 24px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+      background: #E4E4E7; color: #A1A1AA;
+      transition: background .3s, color .3s;
+    }
+    .analyze-step-row.done .analyze-step-icon { background: #DCFCE7; color: #16A34A; }
+    .analyze-step-row.active .analyze-step-icon { background: #DBEAFE; color: #2563EB; animation: spin 1s linear infinite; }
+    .analyze-step-text { font-size: 13px; font-weight: 500; color: #52525B; }
+    .analyze-step-row.done .analyze-step-text { color: #16A34A; }
+    .analyze-step-row.active .analyze-step-text { color: #2563EB; font-weight: 600; }
+    .analyze-pct {
+      margin-left: auto; font-size: 12px; font-weight: 700;
+      color: #A1A1AA; font-variant-numeric: tabular-nums;
+    }
+    .analyze-step-row.done .analyze-pct { color: #16A34A; }
+    .analyze-step-row.active .analyze-pct { color: #2563EB; }
+
+    /* ── 阶段五：结果 ─────────────────────────────────────── */
+    .result-success-banner {
+      background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+      border-bottom: 1px solid #BBF7D0;
+      padding: 24px 32px; display: flex; align-items: center; gap: 14px;
+    }
+    .result-success-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #16A34A; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #fff; flex-shrink: 0;
+    }
+    .result-success-text .result-success-title {
+      font-size: 16px; font-weight: 700; color: #15803D; margin-bottom: 2px;
+    }
+    .result-success-text .result-success-sub {
+      font-size: 13px; color: #166534;
+    }
+    .result-body { padding: 24px 32px 32px; }
+    .result-section-label {
+      font-size: 11px; font-weight: 700; color: #A1A1AA;
+      letter-spacing: .5px; text-transform: uppercase; margin-bottom: 10px;
+    }
+
+    /* 步骤列表 */
+    .result-steps { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+    .result-step-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; border: 1px solid #F0F1F5;
+      background: #FAFAFA; cursor: default;
+      transition: border-color .12s, background .12s;
+    }
+    .result-step-row:hover { border-color: #D0D4E0; background: #F4F5F8; }
+    .result-step-num {
+      width: 20px; height: 20px; border-radius: 5px;
+      background: #E4E4E7; font-size: 10px; font-weight: 700;
+      color: #52525B; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .result-step-content { flex: 1; min-width: 0; }
+    .result-step-action {
+      font-size: 12px; font-weight: 600; color: #52525B;
+      margin-bottom: 2px;
+    }
+    .result-step-detail { font-size: 12px; color: #A1A1AA; line-height: 1.5; }
+    .result-step-del {
+      width: 22px; height: 22px; border-radius: 5px; border: none;
+      background: transparent; color: #C4C4CC; font-size: 11px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .12s, color .12s;
+    }
+    .result-step-del:hover { background: #FFF1F2; color: #E11D48; }
+
+    /* Skill 草稿 */
+    .result-skill-box {
+      border: 1.5px solid #E4E4E7; border-radius: 10px; overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .result-skill-hd {
+      background: #F8F8F9; border-bottom: 1px solid #E4E4E7;
+      padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .result-skill-hd-label {
+      font-size: 12px; font-weight: 700; color: #52525B; flex: 1;
+    }
+    .result-skill-edit-btn {
+      font-size: 11px; color: #6366F1; font-weight: 600;
+      cursor: pointer; background: none; border: none; padding: 2px 6px;
+      border-radius: 4px; transition: background .12s;
+    }
+    .result-skill-edit-btn:hover { background: #EEF2FF; }
+    .result-skill-body {
+      padding: 14px; font-size: 13px; color: #374151;
+      line-height: 1.7; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    }
+    .result-skill-name { font-weight: 700; color: #18181B; margin-bottom: 6px; font-size: 14px; }
+    .result-skill-desc { color: #52525B; margin-bottom: 10px; }
+    .result-skill-tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .result-skill-tag {
+      font-size: 11px; font-weight: 600; padding: 3px 8px;
+      border-radius: 9999px; background: #F0F1F5; color: #52525B;
+    }
+    .result-skill-tag.purple { background: #EEF2FF; color: #6366F1; }
+    .result-skill-tag.blue { background: #DBEAFE; color: #2563EB; }
+    .result-skill-step-list { margin-top: 8px; }
+    .result-skill-step-item {
+      font-size: 12px; color: #52525B; padding: 3px 0;
+      display: flex; gap: 6px; line-height: 1.5;
+    }
+    .result-skill-step-item::before {
+      content: attr(data-n); font-weight: 700; color: #6366F1;
+      flex-shrink: 0; width: 16px;
+    }
+
+    .result-cta { display: flex; flex-direction: column; gap: 10px; }
+    .result-btn-edit {
+      padding: 13px 0; border-radius: 10px; border: none;
+      background: #18181B; color: #fff; font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 7px; transition: background .15s;
+    }
+    .result-btn-edit:hover { background: #3F3F46; }
+    .result-btn-reanalyze {
+      padding: 11px 0; border-radius: 10px;
+      border: 1.5px solid #E4E4E7; background: #fff;
+      color: #52525B; font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 6px; transition: border-color .15s;
+    }
+    .result-btn-reanalyze:hover { border-color: #A1A1AA; }
+
+    /* ── 状态切换 ─────────────────────────────────────────── */
+    .rc-phase { display: none; }
+    .rc-phase.active { display: block; }
+    .rec-stage-wrap { display: none; }
+    .rec-stage-wrap.active { display: flex; flex-direction: column; }
+
+    /* ── 文件上传区 ───────────────────────────────────────── */
+    .upload-drop {
+      border: 2px dashed #D0D4E0; border-radius: 10px;
+      padding: 28px 20px; text-align: center; cursor: pointer;
+      transition: border-color .15s, background .15s; margin-bottom: 4px;
+    }
+    .upload-drop:hover, .upload-drop.drag-over { border-color: #18181B; background: #F4F4F5; }
+    .upload-drop i { font-size: 28px; color: #C4C4CC; margin-bottom: 10px; }
+    .upload-drop-text { font-size: 13px; color: #52525B; margin-bottom: 4px; }
+    .upload-browse { color: #18181B; text-decoration: underline; cursor: pointer; font-weight: 600; }
+    .upload-drop-hint { font-size: 11px; color: #A1A1AA; }
+    .upload-file-info {
+      display: none; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 9px; border: 1px solid #E4E4E7;
+      background: #FAFAFA; margin-bottom: 4px;
+    }
+    .upload-file-info.visible { display: flex; }
+    .upload-file-icon { font-size: 20px; color: #6366F1; flex-shrink: 0; }
+    .upload-file-name { font-size: 13px; font-weight: 600; color: #18181B; flex: 1; }
+    .upload-file-size { font-size: 12px; color: #A1A1AA; }
+    .upload-file-del {
+      width: 24px; height: 24px; border-radius: 5px; border: none;
+      background: transparent; color: #C4C4CC; font-size: 12px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .upload-file-del:hover { background: #FFF1F2; color: #E11D48; }
+  </style>
+</head>
+<body>
+<div class="page-shell">
+
+  <!-- 顶部导航条 -->
+  <header class="rc-header">
+    <a href="create.html" class="rc-header-back">
+      <i class="fas fa-arrow-left"></i> 返回
+    </a>
+    <div class="rc-header-sep"></div>
+    <span class="rc-header-title">录屏生成 Skill</span>
+    <div class="rc-header-step" id="stepDots">
+      <div class="rc-step-dot active" id="dot0"></div>
+      <div class="rc-step-dot" id="dot1"></div>
+      <div class="rc-step-dot" id="dot2"></div>
+      <div class="rc-step-dot" id="dot3"></div>
+    </div>
+  </header>
+
+  <!-- 内容区 -->
+  <main class="rc-body" id="rcBody">
+
+    <!-- ══ 阶段一：准备 ═══════════════════════════════════════ -->
+    <div class="rc-card rc-phase active" id="phase0">
+      <div class="rc-card-hd">
+        <div class="rc-card-icon red"><i class="fas fa-video"></i></div>
+        <h1 class="rc-card-title">录屏生成 Skill</h1>
+        <p class="rc-card-sub">录制你完成某个任务的全过程，AI 会自动分析操作步骤，为你生成可复用的 Skill。</p>
+      </div>
+      <div class="rc-card-bd">
+
+        <!-- 任务描述 -->
+        <div class="rc-desc-label">SKILL 任务描述（可选，帮助 AI 更精准分析）</div>
+        <textarea class="rc-desc-input" id="taskDesc" rows="2"
+          placeholder="例如：处理客服工单并生成回复草稿、每周从 OA 系统导出考勤报表…"></textarea>
+
+        <!-- 方式选择 -->
+        <div class="rc-desc-label">选择录制方式</div>
+        <div class="rc-methods">
+          <div class="rc-method selected" id="methodScreen" onclick="selectMethod('screen')">
+            <div class="rc-method-icon red"><i class="fas fa-desktop"></i></div>
+            <div class="rc-method-name">实时录屏</div>
+            <div class="rc-method-desc">共享屏幕并开始录制，完整捕获操作过程</div>
+            <span class="rc-method-badge">推荐</span>
+          </div>
+          <div class="rc-method" id="methodUpload" onclick="selectMethod('upload')">
+            <div class="rc-method-icon gray"><i class="fas fa-upload"></i></div>
+            <div class="rc-method-name">上传视频</div>
+            <div class="rc-method-desc">上传已有的操作录屏文件（MP4、WebM）</div>
+          </div>
+        </div>
+
+        <!-- 上传区（上传模式时显示） -->
+        <div id="uploadArea" style="display:none; margin-top:16px">
+          <div class="upload-drop" id="uploadDrop">
+            <i class="fas fa-film"></i>
+            <div class="upload-drop-text">拖拽视频文件到此处，或 <span class="upload-browse" id="uploadBrowse">点击选择</span></div>
+            <div class="upload-drop-hint">支持 .mp4 .webm .mov，最大 500MB</div>
+          </div>
+          <div class="upload-file-info" id="uploadFileInfo">
+            <i class="fas fa-film upload-file-icon"></i>
+            <span class="upload-file-name" id="uploadFileName">-</span>
+            <span class="upload-file-size" id="uploadFileSize">-</span>
+            <button class="upload-file-del" id="uploadFileDel"><i class="fas fa-times"></i></button>
+          </div>
+          <input type="file" id="uploadInput" style="display:none" accept="video/*">
+        </div>
+
+        <div class="rc-tip">
+          <i class="fas fa-info-circle"></i>
+          <span>录屏会调用浏览器原生的屏幕共享对话框，你可以选择分享标签页、窗口或整个屏幕。Skill Builder 不会保存你的屏幕内容。</span>
+        </div>
+
+        <button class="rc-btn-primary" id="btnStart">
+          <i class="fas fa-video"></i> 开始录制
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ 阶段二：录制中 ══════════════════════════════════════ -->
+    <div class="rc-card rc-phase" id="phase1">
+      <div class="rec-stage">
+        <div class="rec-indicator">
+          <div class="rec-ring"></div>
+          <div class="rec-dot"></div>
+        </div>
+        <div class="rec-title">正在录制中…</div>
+        <div class="rec-timer" id="recTimer">00:00</div>
+        <div class="rec-sub">完成操作后点击「停止录制」，<br>AI 将自动分析你的操作步骤</div>
+        <button class="rec-stop-btn" id="btnStop">
+          <i class="fas fa-stop"></i> 停止录制
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ 阶段三：预览 ════════════════════════════════════════ -->
+    <div class="rc-card rc-phase" id="phase2">
+      <div class="rc-card-hd">
+        <div class="rc-card-icon blue"><i class="fas fa-play-circle"></i></div>
+        <h1 class="rc-card-title">预览录制内容</h1>
+        <p class="rc-card-sub">确认录制内容无误后，点击「开始分析」让 AI 提取工作流步骤并生成 Skill。</p>
+      </div>
+      <div class="rc-card-bd">
+        <div class="preview-video-wrap">
+          <video id="previewVideo" controls></video>
+        </div>
+        <div class="preview-meta">
+          <div class="preview-meta-item">
+            <div class="preview-meta-icon"><i class="fas fa-clock"></i></div>
+            <div>
+              <div class="preview-meta-label">时长</div>
+              <div class="preview-meta-val" id="previewDur">—</div>
+            </div>
+          </div>
+          <div class="preview-meta-item">
+            <div class="preview-meta-icon"><i class="fas fa-file-video"></i></div>
+            <div>
+              <div class="preview-meta-label">文件大小</div>
+              <div class="preview-meta-val" id="previewSize">—</div>
+            </div>
+          </div>
+          <div class="preview-meta-item">
+            <div class="preview-meta-icon"><i class="fas fa-images"></i></div>
+            <div>
+              <div class="preview-meta-label">预计抽帧</div>
+              <div class="preview-meta-val" id="previewFrames">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="preview-desc-label">SKILL 任务描述</div>
+        <textarea class="preview-desc-input" id="previewDesc" rows="2"
+          placeholder="描述录制内容的任务目标，帮助 AI 分析…"></textarea>
+        <div class="preview-btns">
+          <button class="preview-btn-analyze" id="btnAnalyze">
+            <i class="fas fa-magic"></i> 开始分析，生成 Skill
+          </button>
+          <button class="preview-btn-redo" id="btnRedo">
+            <i class="fas fa-redo"></i> 重新录制
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 阶段四：分析中 ══════════════════════════════════════ -->
+    <div class="rc-card rc-phase" id="phase3">
+      <div class="analyze-stage">
+        <div class="analyze-spinner-wrap">
+          <div class="analyze-ring"></div>
+          <div class="analyze-ring2"></div>
+        </div>
+        <div class="analyze-title">AI 正在分析录屏</div>
+        <div class="analyze-step-label" id="analyzeCurrentStep">正在提取关键帧…</div>
+        <div class="analyze-steps">
+          <div class="analyze-step-row active" id="aStep0">
+            <div class="analyze-step-icon"><i class="fas fa-sync-alt"></i></div>
+            <span class="analyze-step-text">提取关键帧</span>
+            <span class="analyze-pct" id="aPct0">0%</span>
+          </div>
+          <div class="analyze-step-row" id="aStep1">
+            <div class="analyze-step-icon"><i class="fas fa-search"></i></div>
+            <span class="analyze-step-text">识别界面元素与操作动作</span>
+            <span class="analyze-pct" id="aPct1">—</span>
+          </div>
+          <div class="analyze-step-row" id="aStep2">
+            <div class="analyze-step-icon"><i class="fas fa-project-diagram"></i></div>
+            <span class="analyze-step-text">理解任务意图与工作流结构</span>
+            <span class="analyze-pct" id="aPct2">—</span>
+          </div>
+          <div class="analyze-step-row" id="aStep3">
+            <div class="analyze-step-icon"><i class="fas fa-magic"></i></div>
+            <span class="analyze-step-text">生成 Skill 框架草稿</span>
+            <span class="analyze-pct" id="aPct3">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 阶段五：结果 ════════════════════════════════════════ -->
+    <div class="rc-card rc-phase" id="phase4">
+      <div class="result-success-banner">
+        <div class="result-success-icon"><i class="fas fa-check"></i></div>
+        <div class="result-success-text">
+          <div class="result-success-title">分析完成，Skill 草稿已生成</div>
+          <div class="result-success-sub">从录屏中识别到 <strong id="resultStepCount">6</strong> 个关键步骤，请确认后进入编辑器</div>
+        </div>
+      </div>
+      <div class="result-body">
+
+        <!-- 识别到的步骤 -->
+        <div class="result-section-label">识别的操作步骤</div>
+        <div class="result-steps" id="resultSteps"></div>
+
+        <!-- Skill 草稿 -->
+        <div class="result-section-label">生成的 Skill 草稿</div>
+        <div class="result-skill-box">
+          <div class="result-skill-hd">
+            <i class="fas fa-bolt" style="color:#6366F1;font-size:12px"></i>
+            <span class="result-skill-hd-label">Skill 描述预览</span>
+            <button class="result-skill-edit-btn" onclick="goToEditor()">在编辑器中修改 →</button>
+          </div>
+          <div class="result-skill-body">
+            <div class="result-skill-name" id="resultSkillName">—</div>
+            <div class="result-skill-desc" id="resultSkillDesc">—</div>
+            <div class="result-skill-tag-row" id="resultSkillTags"></div>
+            <div class="result-skill-step-list" id="resultSkillStepList"></div>
+          </div>
+        </div>
+
+        <div class="result-cta">
+          <button class="result-btn-edit" onclick="goToEditor()">
+            <i class="fas fa-edit"></i> 继续在编辑器完善 Skill
+          </button>
+          <button class="result-btn-reanalyze" onclick="goToPhase(0)">
+            <i class="fas fa-redo"></i> 重新录制 / 换一段视频
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="sidebar.js"></script>
+<script>SkillBuilderSidebar.render('record');</script>
+<script>
+// ══════════════════════════════════════════════════════════
+// 状态管理
+// ══════════════════════════════════════════════════════════
+let currentPhase = 0;
+let currentMethod = 'screen';   // 'screen' | 'upload'
+let mediaStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordedBlob = null;
+let uploadedFile = null;
+let timerInterval = null;
+let recordSeconds = 0;
+
+const DOTS = [
+  document.getElementById('dot0'),
+  document.getElementById('dot1'),
+  document.getElementById('dot2'),
+  document.getElementById('dot3'),
+];
+
+function goToPhase(n) {
+  document.querySelectorAll('.rc-phase').forEach((el, i) => {
+    el.classList.toggle('active', i === n);
+  });
+  // 更新进度点
+  DOTS.forEach((dot, i) => {
+    dot.classList.remove('active', 'done');
+    if (i < n) dot.classList.add('done');
+    else if (i === n) dot.classList.add('active');
+  });
+  currentPhase = n;
+  // 滚到顶
+  document.getElementById('rcBody').scrollTop = 0;
+}
+
+// ══════════════════════════════════════════════════════════
+// 阶段一：方式选择
+// ══════════════════════════════════════════════════════════
+function selectMethod(method) {
+  currentMethod = method;
+  document.getElementById('methodScreen').classList.toggle('selected', method === 'screen');
+  document.getElementById('methodUpload').classList.toggle('selected', method === 'upload');
+  document.getElementById('uploadArea').style.display = method === 'upload' ? 'block' : 'none';
+  const btn = document.getElementById('btnStart');
+  if (method === 'upload') {
+    btn.innerHTML = '<i class="fas fa-upload"></i> 上传并分析';
+  } else {
+    btn.innerHTML = '<i class="fas fa-video"></i> 开始录制';
+  }
+  updateStartBtn();
+}
+
+function updateStartBtn() {
+  const btn = document.getElementById('btnStart');
+  if (currentMethod === 'upload') {
+    btn.disabled = !uploadedFile;
+  } else {
+    btn.disabled = false;
+  }
+}
+
+// 上传视频
+const uploadDrop = document.getElementById('uploadDrop');
+const uploadInput = document.getElementById('uploadInput');
+document.getElementById('uploadBrowse').addEventListener('click', () => uploadInput.click());
+uploadDrop.addEventListener('click', () => uploadInput.click());
+uploadInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) handleUploadFile(f);
+  e.target.value = '';
+});
+uploadDrop.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadDrop.classList.add('drag-over');
+});
+uploadDrop.addEventListener('dragleave', () => uploadDrop.classList.remove('drag-over'));
+uploadDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadDrop.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleUploadFile(f);
+});
+document.getElementById('uploadFileDel').addEventListener('click', () => {
+  uploadedFile = null;
+  document.getElementById('uploadDrop').style.display = '';
+  document.getElementById('uploadFileInfo').classList.remove('visible');
+  updateStartBtn();
+});
+
+function handleUploadFile(file) {
+  uploadedFile = file;
+  document.getElementById('uploadDrop').style.display = 'none';
+  const info = document.getElementById('uploadFileInfo');
+  info.classList.add('visible');
+  document.getElementById('uploadFileName').textContent = file.name;
+  document.getElementById('uploadFileSize').textContent = formatBytes(file.size);
+  updateStartBtn();
+}
+
+// ══════════════════════════════════════════════════════════
+// 开始按钮逻辑
+// ══════════════════════════════════════════════════════════
+document.getElementById('btnStart').addEventListener('click', async () => {
+  if (currentMethod === 'upload') {
+    // 上传模式 → 直接进预览
+    recordedBlob = uploadedFile;
+    showPreview(uploadedFile, null);
+  } else {
+    // 录屏模式 → 调 getDisplayMedia
+    await startScreenRecord();
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+// 阶段二：实时录屏
+// ══════════════════════════════════════════════════════════
+async function startScreenRecord() {
+  try {
+    mediaStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: 15 },
+      audio: true,
+    });
+  } catch (err) {
+    // 用户取消或浏览器拒绝 → 不跳转，给提示
+    if (err.name !== 'NotAllowedError') {
+      alert('录屏启动失败：' + err.message);
+    }
+    return;
+  }
+
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(mediaStream, {
+    mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? 'video/webm;codecs=vp9' : 'video/webm',
+  });
+  mediaRecorder.ondataavailable = e => {
+    if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+  };
+  mediaRecorder.onstop = finalizeRecording;
+  mediaRecorder.start(1000);
+
+  // 用户从系统对话框关闭共享时自动停止
+  mediaStream.getVideoTracks()[0].addEventListener('ended', () => stopRecording());
+
+  // 跳到录制中阶段
+  goToPhase(1);
+  recordSeconds = 0;
+  updateTimer();
+  timerInterval = setInterval(() => { recordSeconds++; updateTimer(); }, 1000);
+}
+
+function updateTimer() {
+  const m = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+  const s = String(recordSeconds % 60).padStart(2, '0');
+  document.getElementById('recTimer').textContent = m + ':' + s;
+}
+
+document.getElementById('btnStop').addEventListener('click', stopRecording);
+
+function stopRecording() {
+  clearInterval(timerInterval);
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+}
+
+function finalizeRecording() {
+  recordedBlob = new Blob(recordedChunks, { type: 'video/webm' });
+  showPreview(recordedBlob, recordSeconds);
+}
+
+// ══════════════════════════════════════════════════════════
+// 阶段三：预览
+// ══════════════════════════════════════════════════════════
+function showPreview(blob, durationSec) {
+  const url = URL.createObjectURL(blob);
+  const vid = document.getElementById('previewVideo');
+  vid.src = url;
+
+  // 时长（录屏时已知秒数，上传时从 video metadata 读）
+  if (durationSec !== null) {
+    document.getElementById('previewDur').textContent = fmtDur(durationSec);
+    const frames = Math.max(1, Math.round(durationSec / 4));
+    document.getElementById('previewFrames').textContent = frames + ' 帧';
+  } else {
+    vid.onloadedmetadata = () => {
+      const d = Math.round(vid.duration);
+      document.getElementById('previewDur').textContent = fmtDur(d);
+      const frames = Math.max(1, Math.round(d / 4));
+      document.getElementById('previewFrames').textContent = frames + ' 帧';
+    };
+  }
+
+  document.getElementById('previewSize').textContent = formatBytes(blob.size);
+  // 同步任务描述
+  document.getElementById('previewDesc').value = document.getElementById('taskDesc').value;
+
+  goToPhase(2);
+}
+
+function fmtDur(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return m + ':' + String(sec).padStart(2, '0');
+}
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(1) + ' MB';
+}
+
+document.getElementById('btnRedo').addEventListener('click', () => {
+  recordedBlob = null; uploadedFile = null;
+  document.getElementById('uploadDrop').style.display = '';
+  document.getElementById('uploadFileInfo').classList.remove('visible');
+  goToPhase(0);
+});
+
+document.getElementById('btnAnalyze').addEventListener('click', startAnalysis);
+
+// ══════════════════════════════════════════════════════════
+// 阶段四：模拟分析
+// ══════════════════════════════════════════════════════════
+const ANALYZE_STEPS = [
+  { id: 'aStep0', pctId: 'aPct0', label: '正在提取关键帧…',        icon: 'fas fa-sync-alt',       dur: 2200 },
+  { id: 'aStep1', pctId: 'aPct1', label: '识别界面元素与操作动作…', icon: 'fas fa-search',          dur: 2800 },
+  { id: 'aStep2', pctId: 'aPct2', label: '理解任务意图与工作流…',   icon: 'fas fa-project-diagram', dur: 2400 },
+  { id: 'aStep3', pctId: 'aPct3', label: '生成 Skill 框架草稿…',   icon: 'fas fa-magic',           dur: 1800 },
+];
+
+function startAnalysis() {
+  goToPhase(3);
+  // 重置所有步骤
+  ANALYZE_STEPS.forEach((s, i) => {
+    const row = document.getElementById(s.id);
+    row.className = 'analyze-step-row' + (i === 0 ? ' active' : '');
+    document.getElementById(s.pctId).textContent = i === 0 ? '0%' : '—';
+    row.querySelector('.analyze-step-icon').className = 'analyze-step-icon';
+    row.querySelector('.analyze-step-icon').innerHTML = `<i class="${s.icon}"></i>`;
+  });
+
+  runAnalyzeStep(0);
+}
+
+function runAnalyzeStep(idx) {
+  if (idx >= ANALYZE_STEPS.length) {
+    setTimeout(showResult, 400);
+    return;
+  }
+  const s = ANALYZE_STEPS[idx];
+  const row = document.getElementById(s.id);
+  const pctEl = document.getElementById(s.pctId);
+  document.getElementById('analyzeCurrentStep').textContent = s.label;
+
+  // 进度动画
+  let pct = 0;
+  const total = s.dur;
+  const tick = 80;
+  const interval = setInterval(() => {
+    pct = Math.min(pct + Math.round(100 / (total / tick) * (0.8 + Math.random() * 0.4)), 100);
+    pctEl.textContent = pct + '%';
+    if (pct >= 100) {
+      clearInterval(interval);
+      // 标记当前步完成
+      row.className = 'analyze-step-row done';
+      row.querySelector('.analyze-step-icon').innerHTML = '<i class="fas fa-check"></i>';
+      // 激活下一步
+      if (idx + 1 < ANALYZE_STEPS.length) {
+        const next = document.getElementById(ANALYZE_STEPS[idx + 1].id);
+        next.className = 'analyze-step-row active';
+        next.querySelector('.analyze-step-icon').className = 'analyze-step-icon';
+        next.querySelector('.analyze-step-icon').innerHTML =
+          `<i class="${ANALYZE_STEPS[idx+1].icon}"></i>`;
+      }
+      setTimeout(() => runAnalyzeStep(idx + 1), 300);
+    }
+  }, tick);
+}
+
+// ══════════════════════════════════════════════════════════
+// 阶段五：结果（mock 数据）
+// ══════════════════════════════════════════════════════════
+const MOCK_RESULTS = {
+  default: {
+    skillName: '操作流程自动化 Skill',
+    skillDesc: '基于录屏分析，自动识别用户在系统中的操作路径，将重复性工作流封装为可一键执行的 Skill，减少手动操作时间。',
+    tags: [{ label: '自动化', cls: 'purple' }, { label: '流程提取', cls: 'blue' }, { label: '效率工具' }],
+    steps: [
+      { action: '打开目标系统', detail: '用户导航至目标页面，系统识别到登录态与页面上下文' },
+      { action: '输入查询条件', detail: '识别到用户在搜索框中填写筛选参数的操作' },
+      { action: '执行数据筛选', detail: '点击「查询」按钮，等待数据列表加载完成' },
+      { action: '选择目标记录', detail: '勾选符合条件的数据行，进入详情操作界面' },
+      { action: '批量处理并确认', detail: '对选中记录执行批量操作，填写备注并提交确认' },
+      { action: '导出结果文件', detail: '点击「导出」，选择 Excel 格式，等待文件下载完成' },
+    ],
+  },
+};
+
+function getTaskKey() {
+  const desc = (document.getElementById('previewDesc').value ||
+                document.getElementById('taskDesc').value || '').toLowerCase();
+  return 'default';
+}
+
+function showResult() {
+  const data = MOCK_RESULTS[getTaskKey()] || MOCK_RESULTS.default;
+
+  document.getElementById('resultSkillName').textContent = data.skillName;
+  document.getElementById('resultSkillDesc').textContent = data.skillDesc;
+  document.getElementById('resultStepCount').textContent = data.steps.length;
+
+  // tags
+  const tagRow = document.getElementById('resultSkillTags');
+  tagRow.innerHTML = data.tags.map(t =>
+    `<span class="result-skill-tag ${t.cls || ''}">${t.label}</span>`
+  ).join('');
+
+  // 步骤列表（操作区）
+  const stepsEl = document.getElementById('resultSteps');
+  stepsEl.innerHTML = data.steps.map((s, i) => `
+    <div class="result-step-row" id="rs${i}">
+      <div class="result-step-num">${i + 1}</div>
+      <div class="result-step-content">
+        <div class="result-step-action">${s.action}</div>
+        <div class="result-step-detail">${s.detail}</div>
+      </div>
+      <button class="result-step-del" onclick="deleteStep(${i})" title="删除此步骤">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `).join('');
+
+  // Skill 步骤预览
+  const skillStepEl = document.getElementById('resultSkillStepList');
+  skillStepEl.innerHTML = data.steps.map((s, i) =>
+    `<div class="result-skill-step-item" data-n="${i + 1}.">${s.action}：${s.detail}</div>`
+  ).join('');
+
+  goToPhase(4);
+}
+
+function deleteStep(idx) {
+  const el = document.getElementById('rs' + idx);
+  if (el) {
+    el.style.transition = 'opacity .2s, max-height .2s';
+    el.style.opacity = '0';
+    el.style.maxHeight = el.offsetHeight + 'px';
+    setTimeout(() => { el.style.maxHeight = '0'; el.style.padding = '0'; }, 200);
+    setTimeout(() => el.remove(), 400);
+  }
+}
+
+function goToEditor() {
+  window.location.href = 'skill-editor.html';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>创建技能 — Skill Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    .page-shell { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; background:#f5f6fa; }
+
+    /* 顶部标题栏 */
+    .cw-header {
+      height:52px; background:#fff; border-bottom:1px solid #eceef2;
+      display:flex; align-items:center; padding:0 24px; gap:12px; flex-shrink:0;
+    }
+    .cw-tab { font-size:15px; font-weight:700; color:#111; text-decoration:none; }
+
+    /* 主区域 */
+    .cw-app { flex:1; display:flex; min-height:0; overflow:hidden; }
+
+    /* 历史侧栏 */
+    .cw-history {
+      width:220px; border-right:1px solid #eceef2;
+      padding:20px 18px; flex-shrink:0; overflow:hidden;
+      background:#fff;
+      transition:width .18s ease, padding .18s ease;
+    }
+    .cw-app.collapsed .cw-history { width:54px; padding:20px 16px; border-right-color:transparent; }
+    .cw-app.collapsed .cw-history-content { display:none; }
+    .cw-menu-btn {
+      width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+      color:#999; font-size:15px; margin-bottom:28px;
+      border:none; background:transparent; cursor:pointer;
+    }
+    .cw-menu-btn:hover { color:#111; }
+    .cw-history-content { overflow-y:auto; }
+    .cw-hgroup { margin-bottom:18px; }
+    .cw-hgroup-label { font-size:11px; font-weight:600; color:#999; letter-spacing:.3px; margin-bottom:6px; padding:0 2px; }
+    .cw-hitem {
+      display:flex; align-items:center; gap:7px;
+      padding:6px 8px; border-radius:8px; font-size:13px; color:#555;
+      cursor:pointer; transition:background .1s;
+    }
+    .cw-hitem:hover { background:#f5f6fa; color:#111; }
+    .cw-hitem i { font-size:11px; color:#999; flex-shrink:0; }
+    .cw-hitem span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    /* 主编辑区 */
+    .cw-main {
+      flex:1; min-width:0; display:flex; flex-direction:column;
+      align-items:center; padding-top:80px; overflow-y:auto;
+    }
+    .cw-title { font-size:32px; font-weight:700; color:#111; margin-bottom:10px; letter-spacing:-.5px; }
+    .cw-subtitle { color:#999; font-size:15px; margin-bottom:24px; }
+
+    /* ── 模式切换 ────────────────────────────────────────── */
+    .cw-mode-tabs {
+      display:flex; gap:6px;
+      margin-bottom:20px;
+    }
+    .cw-mode-tab {
+      display:flex; align-items:center; gap:6px;
+      padding:7px 18px; border-radius:20px; border:1px solid #eceef2;
+      font-size:13px; font-weight:500; color:#555;
+      cursor:pointer; background:#f5f6fa;
+      transition:background .15s, color .15s, border-color .15s;
+    }
+    .cw-mode-tab i { font-size:12px; }
+    .cw-mode-tab:hover { color:#111; border-color:#bbb; background:#fff; }
+    .cw-mode-tab.active {
+      background:#111; color:#fff; font-weight:600; border-color:#111;
+    }
+    .cw-mode-tab.active i { color:#fff; }
+    .cw-mode-tab.active.record-tab { background:#111; color:#fff; border-color:#111; }
+    .cw-mode-tab.active.record-tab i { color:#fff; }
+
+    /* ── 文字模式 ────────────────────────────────────────── */
+    #textMode { width:100%; display:flex; flex-direction:column; align-items:center; }
+
+    /* 输入框 */
+    .cw-composer {
+      width:min(860px,calc(100% - 120px));
+      min-height:160px; max-height:360px;
+      border:1px solid #eceef2; border-radius:16px;
+      display:flex; flex-direction:column; background:#fff;
+      overflow:hidden; position:relative; transition:max-height .2s;
+    }
+    .cw-composer:focus-within { border-color:#bbb; box-shadow:0 4px 18px rgba(0,0,0,.08); }
+    .cw-tab-hint {
+      position:absolute; top:20px; left:22px;
+      display:flex; align-items:center; gap:8px;
+      pointer-events:none; transition:opacity .1s;
+    }
+    .cw-tab-hint.hidden { opacity:0; }
+    .cw-tab-key {
+      font-size:12px; font-weight:600; color:#999;
+      background:#f5f6fa; border:1px solid #eceef2; border-radius:4px;
+      padding:1px 6px; line-height:1.6; flex-shrink:0;
+    }
+    .cw-tab-text { font-size:15px; color:#ccc; }
+    .cw-textarea {
+      flex:1; border:none; resize:none; outline:none;
+      padding:20px 22px; font-size:15px; color:#111;
+      line-height:1.6; font-family:inherit; min-height:120px;
+      background:transparent;
+    }
+    .cw-textarea::placeholder { color:transparent; }
+    .cw-opt-view {
+      display:none; flex:1; padding:16px 22px 0;
+      overflow-y:auto; font-size:14px; line-height:1.7;
+    }
+    .cw-composer.optimized .cw-textarea { display:none; }
+    .cw-composer.optimized .cw-opt-view { display:flex; flex-direction:column; }
+    .cw-opt-before { color:#999; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eceef2; }
+    .cw-opt-before-label { font-size:12px; font-weight:600; color:#bbb; margin-bottom:3px; }
+    .cw-opt-after-label { font-size:12px; font-weight:600; color:#111; margin-bottom:6px; }
+    .cw-opt-after p { margin-bottom:4px; }
+    .cw-stream-cursor {
+      display:inline-block; width:2px; height:1em;
+      background:#111; margin-left:1px;
+      vertical-align:text-bottom; animation:blink .6s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cw-bottom {
+      height:52px; display:flex; align-items:center;
+      gap:10px; padding:0 18px;
+    }
+    .cw-icon-btn {
+      width:30px; height:30px; border-radius:8px; border:1px solid #eceef2;
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:#555; font-size:13px; flex-shrink:0;
+      transition:background .12s, border-color .12s;
+    }
+    .cw-icon-btn:hover { background:#f5f6fa; border-color:#bbb; }
+    .cw-add-wrap { position:relative; }
+    .cw-dropdown {
+      position:absolute; bottom:calc(100% + 8px); left:0;
+      background:#fff; border:1px solid #eceef2; border-radius:12px;
+      box-shadow:0 6px 20px rgba(0,0,0,.08); min-width:160px;
+      padding:4px 0; z-index:100;
+      opacity:0; transform:translateY(4px); pointer-events:none;
+      transition:opacity .15s, transform .15s;
+    }
+    .cw-dropdown.open { opacity:1; transform:none; pointer-events:auto; }
+    .cw-dropdown-item {
+      display:flex; align-items:center; gap:9px;
+      padding:9px 14px; font-size:13px; color:#111; cursor:pointer;
+    }
+    .cw-dropdown-item:hover { background:#f5f6fa; }
+    .cw-dropdown-item i { width:14px; text-align:center; color:#999; font-size:12px; }
+    .cw-right-btns { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .cw-opt-actions { display:flex; align-items:center; gap:6px; }
+    .cw-opt-actions.hidden { display:none; }
+    .cw-optimize-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:6px 14px; border-radius:20px; border:1px solid #eceef2;
+      background:#fff; color:#111; font-size:13px; font-weight:500;
+      cursor:pointer; transition:border-color .15s, box-shadow .15s;
+    }
+    .cw-optimize-btn:hover { border-color:#bbb; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .cw-optimize-btn.hidden { display:none; }
+    .cw-optimize-btn i { font-size:12px; color:#111; }
+    .cw-send {
+      width:34px; height:34px; border-radius:999px; border:none;
+      background:#ddd; color:#fff; font-size:14px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:background .15s;
+    }
+
+    /* 案例区 */
+    .cw-examples { width:min(860px,calc(100% - 120px)); margin-top:32px; padding-bottom:48px; }
+    .cw-ex-header { display:flex; align-items:center; gap:0; margin-bottom:14px; border-bottom:1px solid #eceef2; }
+    .cw-ex-tab {
+      font-size:13px; font-weight:500; color:#999;
+      padding:0 4px 10px; margin-right:24px; cursor:pointer;
+      border-bottom:2px solid transparent; margin-bottom:-1px;
+      transition:color .15s, border-color .15s; white-space:nowrap;
+    }
+    .cw-ex-tab:hover { color:#111; }
+    .cw-ex-tab.active { color:#111; font-weight:600; border-bottom-color:#111; }
+    .cw-ex-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .ex-card {
+      border-radius:16px; background:#fff; border:1px solid #eceef2;
+      cursor:pointer; transition:box-shadow .18s, border-color .18s, transform .18s;
+      overflow:hidden; display:flex; flex-direction:column;
+    }
+    .ex-card:hover { border-color:#ddd; box-shadow:0 4px 18px rgba(0,0,0,.08); transform:translateY(-1px); }
+    .ex-cover { width:100%; height:100px; background:#f5f6fa; flex-shrink:0; overflow:hidden; line-height:0; }
+    .ex-cover svg { display:block; width:100%; height:100%; }
+    .ex-body { padding:12px 14px 14px; display:flex; flex-direction:column; gap:4px; }
+    .ex-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:2px; }
+    .ex-tag { font-size:10px; font-weight:600; color:#555; background:#f5f6fa; border-radius:9999px; padding:2px 8px; }
+    .ex-name { font-size:13px; font-weight:700; color:#111; line-height:1.4; }
+    .ex-desc { font-size:11px; color:#999; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .ex-footer { display:flex; align-items:center; justify-content:space-between; margin-top:6px; padding-top:8px; border-top:1px solid #eceef2; }
+    .ex-uses { font-size:11px; color:#999; display:flex; align-items:center; gap:4px; }
+    .ex-author { font-size:11px; color:#bbb; }
+    .rc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .rc-card {
+      border-radius:16px; background:#fff; border:1px solid #eceef2;
+      cursor:pointer; transition:box-shadow .15s, border-color .15s, transform .15s;
+      padding:16px; display:flex; flex-direction:column; gap:10px;
+    }
+    .rc-card:hover { border-color:#ddd; box-shadow:0 4px 18px rgba(0,0,0,.08); transform:translateY(-1px); }
+    .rc-top { display:flex; align-items:flex-start; gap:12px; }
+    .rc-icon { width:48px; height:48px; border-radius:12px; flex-shrink:0; background:#f5f6fa; display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .rc-info { flex:1; min-width:0; }
+    .rc-name { font-size:13px; font-weight:700; color:#111; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+    .rc-desc { font-size:11.5px; color:#999; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .rc-badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:9999px; background:#f5f6fa; color:#555; margin-top:6px; }
+    .rc-badge.published { background:#111; color:#fff; }
+    .rc-badge.draft { background:#f5f6fa; color:#999; }
+    .rc-badge.editing { background:#eceef2; color:#555; }
+    .rc-bottom { display:flex; align-items:center; gap:6px; border-top:1px solid #eceef2; padding-top:10px; }
+    .rc-avatar { width:20px; height:20px; border-radius:50%; background:#111; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .rc-user { font-size:12px; font-weight:600; color:#111; }
+    .rc-time { font-size:11px; color:#999; margin-left:2px; }
+    .cw-load-more { text-align:center; padding:20px 0 4px; grid-column:1/-1; }
+    .cw-load-spinner { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#9AA1AF; }
+    .cw-load-spinner i { animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── 录屏模式 ────────────────────────────────────────── */
+    #recordMode {
+      width:min(680px,calc(100% - 120px));
+      display:none; flex-direction:column;
+      padding-bottom:64px;
+    }
+    #recordMode.active { display:flex; }
+
+    /* 阶段：默认隐藏，active 时显示 */
+    .rp-phase { display:none; }
+    .rp-phase.active { display:block; }
+
+    /* ── 阶段0：设置 ─────────────────────────────────────── */
+    .rp-methods {
+      display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;
+    }
+    .rp-method {
+      border:1.5px solid #eceef2; border-radius:16px;
+      padding:16px; cursor:pointer;
+      transition:border-color .15s, background .15s;
+      display:flex; align-items:flex-start; gap:12px; background:#fff;
+    }
+    .rp-method:hover { border-color:#bbb; background:#fafafa; }
+    .rp-method.selected { border-color:#111; background:#fafafa; }
+    .rp-method-icon {
+      width:32px; height:32px; border-radius:8px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:14px;
+    }
+    .rp-method-icon.red { background:#FFF1F2; color:#E11D48; }
+    .rp-method-icon.gray { background:#f5f6fa; color:#555; }
+    .rp-method-info { flex:1; min-width:0; }
+    .rp-method-name { font-size:13px; font-weight:700; color:#111; margin-bottom:3px; }
+    .rp-method-desc { font-size:12px; color:#555; line-height:1.45; }
+    .rp-method-badge {
+      font-size:10px; font-weight:700; padding:1px 8px; border-radius:9999px;
+      background:#DCFCE7; color:#16A34A; display:inline-block; margin-top:4px;
+    }
+
+    .rp-label {
+      font-size:11px; font-weight:700; color:#999;
+      letter-spacing:.4px; text-transform:uppercase; margin-bottom:8px;
+    }
+    .rp-desc-input {
+      width:100%; border:1.5px solid #eceef2; border-radius:12px;
+      padding:11px 14px; font-size:14px; color:#111;
+      outline:none; font-family:inherit; resize:none; line-height:1.6;
+      transition:border-color .15s; margin-bottom:20px; background:#fff;
+    }
+    .rp-desc-input:focus { border-color:#bbb; }
+    .rp-desc-input::placeholder { color:#ccc; }
+
+    /* 上传区 */
+    .rp-upload-drop {
+      border:2px dashed #eceef2; border-radius:12px;
+      padding:24px; text-align:center; cursor:pointer;
+      transition:border-color .15s, background .15s;
+      margin-bottom:16px; background:#fff;
+    }
+    .rp-upload-drop:hover, .rp-upload-drop.drag-over { border-color:#111; background:#f5f6fa; }
+    .rp-upload-drop i { font-size:24px; color:#ccc; margin-bottom:8px; }
+    .rp-upload-drop-text { font-size:13px; color:#555; margin-bottom:3px; }
+    .rp-upload-browse { color:#111; text-decoration:underline; font-weight:600; cursor:pointer; }
+    .rp-upload-hint { font-size:11px; color:#999; }
+    .rp-file-pill {
+      display:none; align-items:center; gap:10px;
+      padding:10px 14px; border-radius:10px;
+      border:1px solid #eceef2; background:#fff; margin-bottom:16px;
+    }
+    .rp-file-pill.visible { display:flex; }
+    .rp-file-pill i { font-size:18px; color:#555; flex-shrink:0; }
+    .rp-file-name { font-size:13px; font-weight:600; color:#111; flex:1; }
+    .rp-file-size { font-size:12px; color:#999; }
+    .rp-file-del {
+      width:22px; height:22px; border-radius:5px; border:none;
+      background:transparent; color:#ccc; font-size:11px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+    }
+    .rp-file-del:hover { background:#FFF1F2; color:#E11D48; }
+
+    .rp-tip {
+      font-size:12px; color:#999;
+      display:flex; align-items:flex-start; gap:6px; line-height:1.55;
+      margin-bottom:20px;
+    }
+    .rp-tip i { margin-top:2px; flex-shrink:0; }
+
+    /* 按钮 */
+    .rp-btn-primary {
+      width:100%; padding:12px 0; border-radius:24px; border:none;
+      background:#111; color:#fff; font-size:14px; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      gap:7px; transition:opacity .15s;
+    }
+    .rp-btn-primary:hover { opacity:.82; }
+    .rp-btn-primary:disabled { background:#ccc; cursor:not-allowed; opacity:1; }
+    .rp-btn-secondary {
+      width:100%; padding:10px 0; border-radius:24px;
+      border:1px solid #eceef2; background:#fff;
+      color:#555; font-size:13px; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      gap:6px; transition:border-color .15s; margin-top:10px;
+    }
+    .rp-btn-secondary:hover { border-color:#bbb; }
+
+    /* ── 阶段1：录制中 ───────────────────────────────────── */
+    .rp-rec-wrap {
+      display:flex; flex-direction:column; align-items:center;
+      padding:48px 32px 40px; text-align:center;
+      border:1px solid #eceef2; border-radius:16px; background:#fff;
+    }
+    .rp-rec-indicator {
+      width:72px; height:72px; border-radius:50%;
+      background:#FFF1F2; border:3px solid #FCA5A5;
+      display:flex; align-items:center; justify-content:center;
+      position:relative; margin-bottom:20px;
+    }
+    .rp-rec-dot {
+      width:22px; height:22px; border-radius:50%;
+      background:#E11D48; animation:recPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes recPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:.85} }
+    .rp-rec-ring {
+      position:absolute; inset:-6px; border-radius:50%;
+      border:2px solid #FCA5A5; animation:recRing 1.4s ease-in-out infinite;
+    }
+    @keyframes recRing { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.08);opacity:.2} }
+    .rp-rec-title { font-size:18px; font-weight:700; color:#111; margin-bottom:4px; }
+    .rp-rec-timer {
+      font-size:32px; font-weight:700; color:#E11D48;
+      font-variant-numeric:tabular-nums; letter-spacing:-.5px;
+      margin:10px 0;
+      font-family:"JetBrains Mono","Menlo",monospace;
+    }
+    .rp-rec-sub { font-size:13px; color:#999; margin-bottom:28px; }
+    .rp-stop-btn {
+      padding:10px 28px; border-radius:24px; border:none;
+      background:#111; color:#fff; font-size:13px; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; gap:7px;
+      transition:opacity .15s;
+    }
+    .rp-stop-btn:hover { opacity:.82; }
+
+    /* ── 阶段2：预览 ─────────────────────────────────────── */
+    .rp-preview-video {
+      width:100%; border-radius:12px; overflow:hidden;
+      background:#111; aspect-ratio:16/9; margin-bottom:14px;
+    }
+    .rp-preview-video video { width:100%; height:100%; object-fit:contain; display:block; }
+    .rp-meta-row {
+      display:flex; align-items:center; gap:16px;
+      padding:12px 14px; background:#f5f6fa; border-radius:12px;
+      margin-bottom:16px;
+    }
+    .rp-meta-item { display:flex; align-items:center; gap:8px; }
+    .rp-meta-icon {
+      width:26px; height:26px; border-radius:8px;
+      background:#eceef2; display:flex; align-items:center; justify-content:center;
+      font-size:11px; color:#555; flex-shrink:0;
+    }
+    .rp-meta-label { font-size:11px; color:#999; }
+    .rp-meta-val { font-size:13px; font-weight:600; color:#111; }
+
+    /* ── 阶段3：分析中 ───────────────────────────────────── */
+    .rp-analyze-wrap {
+      display:flex; flex-direction:column; align-items:center;
+      padding:40px 24px; text-align:center;
+    }
+    .rp-spinner-wrap { position:relative; width:64px; height:64px; margin-bottom:20px; }
+    .rp-ring {
+      width:64px; height:64px; border-radius:50%;
+      border:3px solid #eceef2; border-top-color:#111;
+      animation:spin 1s linear infinite; position:absolute; inset:0;
+    }
+    .rp-ring2 {
+      width:48px; height:48px; border-radius:50%;
+      border:2px solid #eceef2; border-bottom-color:#555;
+      animation:spin 1.6s linear infinite reverse;
+      position:absolute; top:8px; left:8px;
+    }
+    .rp-analyze-title { font-size:18px; font-weight:700; color:#111; margin-bottom:4px; }
+    .rp-analyze-step-label {
+      font-size:13px; color:#555; font-weight:600; margin-bottom:24px;
+      min-height:20px;
+    }
+    .rp-steps-list {
+      width:100%; text-align:left;
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .rp-step-row {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:10px;
+      background:#f5f6fa; transition:background .3s;
+    }
+    .rp-step-row.done { background:#F0FDF4; }
+    .rp-step-row.active { background:#fff; border:1px solid #eceef2; }
+    .rp-step-icon {
+      width:22px; height:22px; border-radius:6px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:10px;
+      background:#eceef2; color:#999; transition:background .3s, color .3s;
+    }
+    .rp-step-row.done .rp-step-icon { background:#DCFCE7; color:#16A34A; }
+    .rp-step-row.active .rp-step-icon { background:#111; color:#fff; animation:spin 1s linear infinite; }
+    .rp-step-text { font-size:13px; font-weight:500; color:#555; flex:1; }
+    .rp-step-row.done .rp-step-text { color:#16A34A; }
+    .rp-step-row.active .rp-step-text { color:#111; font-weight:600; }
+    .rp-step-pct {
+      font-size:12px; font-weight:700; color:#999;
+      font-variant-numeric:tabular-nums; flex-shrink:0;
+    }
+    .rp-step-row.done .rp-step-pct { color:#16A34A; }
+    .rp-step-row.active .rp-step-pct { color:#111; }
+
+    /* ── 阶段4：结果 ─────────────────────────────────────── */
+    .rp-result-banner {
+      background:linear-gradient(135deg,#ECFDF5,#F0FDF4);
+      border:1px solid #BBF7D0; border-radius:16px;
+      padding:16px 18px; display:flex; align-items:center; gap:12px;
+      margin-bottom:20px;
+    }
+    .rp-result-check {
+      width:36px; height:36px; border-radius:50%;
+      background:#16A34A; display:flex; align-items:center; justify-content:center;
+      font-size:14px; color:#fff; flex-shrink:0;
+    }
+    .rp-result-title { font-size:14px; font-weight:700; color:#15803D; margin-bottom:2px; }
+    .rp-result-sub { font-size:12px; color:#166534; }
+
+    .rp-section-label {
+      font-size:11px; font-weight:700; color:#A1A1AA;
+      letter-spacing:.5px; text-transform:uppercase; margin-bottom:8px;
+    }
+    .rp-extracted-steps { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
+    .rp-extracted-row {
+      display:flex; align-items:flex-start; gap:9px;
+      padding:9px 11px; border-radius:10px; border:1px solid #eceef2;
+      background:#fff; transition:border-color .12s;
+    }
+    .rp-extracted-row:hover { border-color:#bbb; }
+    .rp-extracted-num {
+      width:18px; height:18px; border-radius:4px;
+      background:#eceef2; font-size:10px; font-weight:700; color:#555;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;
+    }
+    .rp-extracted-content { flex:1; min-width:0; }
+    .rp-extracted-action { font-size:12px; font-weight:600; color:#555; margin-bottom:2px; }
+    .rp-extracted-detail { font-size:12px; color:#999; line-height:1.5; }
+    .rp-extracted-del {
+      width:20px; height:20px; border-radius:4px; border:none;
+      background:transparent; color:#D4D4D8; font-size:10px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .rp-extracted-del:hover { background:#FFF1F2; color:#E11D48; }
+
+    .rp-skill-box {
+      border:1px solid #eceef2; border-radius:16px;
+      overflow:hidden; margin-bottom:20px;
+    }
+    .rp-skill-hd {
+      background:#f5f6fa; border-bottom:1px solid #eceef2;
+      padding:9px 13px; display:flex; align-items:center; gap:7px;
+    }
+    .rp-skill-hd-label { font-size:12px; font-weight:700; color:#555; flex:1; }
+    .rp-skill-edit-hint { font-size:11px; color:#111; font-weight:600; }
+    .rp-skill-bd {
+      padding:14px; font-size:13px; color:#555; line-height:1.7; background:#fff;
+    }
+    .rp-skill-name { font-weight:700; color:#111; margin-bottom:5px; font-size:14px; }
+    .rp-skill-desc { color:#555; margin-bottom:10px; }
+    .rp-skill-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
+    .rp-skill-tag {
+      font-size:11px; font-weight:600; padding:2px 8px;
+      border-radius:9999px; background:#f5f6fa; color:#555;
+    }
+    .rp-skill-tag.purple { background:#f0eeff; color:#6d28d9; }
+    .rp-skill-tag.blue { background:#f0f5ff; color:#2563EB; }
+    .rp-skill-steps { margin-top:6px; }
+    .rp-skill-step {
+      font-size:12px; color:#555; padding:2px 0;
+      display:flex; gap:6px; line-height:1.5;
+    }
+    .rp-skill-step::before {
+      content:attr(data-n); font-weight:700; color:#111; flex-shrink:0; width:16px;
+    }
+    .rp-result-btns { display:flex; flex-direction:column; gap:10px; }
+    .rp-btn-edit {
+      padding:12px 0; border-radius:24px; border:none;
+      background:#111; color:#fff; font-size:14px; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      gap:7px; transition:opacity .15s;
+    }
+    .rp-btn-edit:hover { opacity:.82; }
+    .rp-btn-restart {
+      padding:10px 0; border-radius:24px;
+      border:1px solid #eceef2; background:#fff;
+      color:#555; font-size:13px; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      gap:6px; transition:border-color .15s;
+    }
+    .rp-btn-restart:hover { border-color:#bbb; }
+
+/* ── ZIP 弹窗 ─────────────────────────────────────────── */
+    .modal-mask { position:fixed; inset:0; background:rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; z-index:999; }
+    .modal-mask.hidden { display:none; }
+    .modal-box { background:#fff; border-radius:16px; width:460px; box-shadow:0 16px 48px rgba(0,0,0,.12); overflow:hidden; }
+    .modal-hd { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid #eceef2; }
+    .modal-hd-title { font-size:15px; font-weight:700; color:#111; }
+    .modal-close { width:28px; height:28px; border-radius:8px; border:none; background:transparent; cursor:pointer; color:#999; font-size:13px; display:flex; align-items:center; justify-content:center; }
+    .modal-close:hover { background:#f5f6fa; color:#111; }
+    .modal-bd { padding:20px; }
+    .zip-drop { border:2px dashed #eceef2; border-radius:12px; padding:36px 24px; text-align:center; cursor:pointer; transition:border-color .15s, background .15s; }
+    .zip-drop:hover, .zip-drop.drag-over { border-color:#111; background:#f5f6fa; }
+    .zip-drop-icon { font-size:32px; color:#ccc; margin-bottom:12px; }
+    .zip-drop-text { font-size:13px; color:#555; margin-bottom:6px; }
+    .zip-browse { color:#111; cursor:pointer; text-decoration:underline; }
+    .zip-drop-hint { font-size:11px; color:#999; }
+    .zip-progress.hidden { display:none; }
+    .zip-file-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .zip-file-info { flex:1; min-width:0; }
+    .zip-filename { font-size:13px; font-weight:600; color:#111; margin-bottom:6px; }
+    .zip-bar-wrap { height:4px; background:#eceef2; border-radius:9999px; overflow:hidden; }
+    .zip-bar { height:100%; background:#111; border-radius:9999px; width:0%; transition:width .1s; }
+    .zip-pct { font-size:12px; color:#555; flex-shrink:0; }
+    .zip-status { font-size:12px; color:#999; text-align:center; margin-top:4px; }
+    .modal-ft { display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid #eceef2; }
+    .modal-ft.hidden { display:none; }
+    .btn-cancel { padding:7px 16px; border-radius:20px; border:1px solid #eceef2; background:#fff; font-size:13px; color:#555; cursor:pointer; }
+    .btn-cancel:hover { background:#f5f6fa; border-color:#bbb; }
+    .btn-confirm { padding:7px 16px; border-radius:20px; border:none; background:#111; font-size:13px; color:#fff; cursor:pointer; font-weight:600; }
+    .btn-confirm:hover { opacity:.82; }
+  </style>
+</head>
+<body>
+<div class="page-shell">
+  <div class="cw-header">
+    <span class="cw-tab active">创建技能</span>
+  </div>
+
+  <div class="cw-app" id="cwApp">
+    <!-- 历史侧栏 -->
+    <aside class="cw-history">
+      <button class="cw-menu-btn" id="cwMenuBtn"><i class="fas fa-bars"></i></button>
+      <div class="cw-history-content">
+        <div class="cw-hgroup">
+          <div class="cw-hgroup-label">今天</div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>写作框架生成器</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>小红书爆款文案</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>数据可视化图表</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>PPT大纲生成助手</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>会议纪要提炼</span></div>
+        </div>
+        <div class="cw-hgroup">
+          <div class="cw-hgroup-label">7天内</div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>代码审查助手</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>抖音转公众号</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>多语言翻译技能</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>商品描述优化器</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>UI配色方案生成</span></div>
+        </div>
+        <div class="cw-hgroup">
+          <div class="cw-hgroup-label">30天以上</div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>思维导图生成器</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>合同风险扫描</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>周报自动生成</span></div>
+          <div class="cw-hitem"><i class="far fa-circle"></i><span>竞品分析报告</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <section class="cw-main" id="cwMain">
+      <h1 class="cw-title">Skill Builder 企业版</h1>
+      <div class="cw-subtitle">选择方式，创建你的专属 Skill</div>
+
+      <!-- 模式切换 -->
+      <div class="cw-mode-tabs">
+        <button class="cw-mode-tab active" data-mode="text">
+          <i class="fas fa-keyboard"></i> 文字描述
+        </button>
+        <button class="cw-mode-tab record-tab" data-mode="record">
+          <i class="fas fa-video"></i> 录屏生成
+        </button>
+      </div>
+
+      <!-- ══ 文字模式 ══════════════════════════════════════ -->
+      <div id="textMode">
+        <div class="cw-composer" id="cwComposer">
+          <div class="cw-tab-hint" id="cwHint">
+            <span class="cw-tab-key">Tab</span>
+            <span class="cw-tab-text" id="cwHintText">帮我做一个写作框架技能，可以生成深入浅出的文章</span>
+          </div>
+          <textarea class="cw-textarea" id="cwTextarea"></textarea>
+          <div class="cw-opt-view" id="cwOptView">
+            <div class="cw-opt-before">
+              <div class="cw-opt-before-label">优化前</div>
+              <div id="cwOptBefore"></div>
+            </div>
+            <div>
+              <div class="cw-opt-after-label">优化后</div>
+              <div id="cwOptAfter"></div>
+            </div>
+          </div>
+          <div class="cw-bottom">
+            <div class="cw-add-wrap">
+              <button class="cw-icon-btn" id="cwAddBtn"><i class="fas fa-plus"></i></button>
+              <div class="cw-dropdown" id="cwDropdown">
+                <div class="cw-dropdown-item" id="cwAddLocal"><i class="fas fa-file"></i> 本地文件</div>
+                <div class="cw-dropdown-item" id="cwAddDoc"><i class="fas fa-book-open"></i> JoySpace 文档</div>
+                <div class="cw-dropdown-item" id="cwAddCli"><i class="fas fa-terminal"></i> CLI</div>
+              </div>
+            </div>
+            <button class="cw-icon-btn" id="cwZipBtn" title="上传 Skill ZIP 包"><i class="fas fa-file-archive"></i></button>
+            <input type="file" id="cwLocalFile" style="display:none">
+            <input type="file" id="cwZipFile" style="display:none" accept=".zip">
+            <div class="cw-right-btns">
+              <div class="cw-opt-actions hidden" id="cwOptActions">
+                <button class="cw-icon-btn" id="cwRefresh" title="重新生成"><i class="fas fa-redo"></i></button>
+                <button class="cw-icon-btn" id="cwCancelOpt" title="取消优化"><i class="fas fa-times"></i></button>
+              </div>
+              <button class="cw-optimize-btn hidden" id="cwOptBtn"><i class="fas fa-magic"></i> 一键优化</button>
+              <button class="cw-send" id="cwSend"><i class="fas fa-arrow-up"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 案例区 -->
+        <div class="cw-examples">
+          <div class="cw-ex-header">
+            <div class="cw-ex-tab active" data-tab="showcase">优秀 Skill 案例</div>
+            <div class="cw-ex-tab" data-tab="recent">最近编辑</div>
+          </div>
+          <div id="showcasePane">
+            <div class="cw-ex-grid" id="exGrid"></div>
+          </div>
+          <div id="recentPane" style="display:none">
+            <div class="rc-grid" id="rcGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ 录屏模式 ══════════════════════════════════════ -->
+      <div id="recordMode">
+
+        <!-- 阶段0：设置 -->
+        <div class="rp-phase active" id="rPhase0">
+          <div class="rp-label">选择录制方式</div>
+          <div class="rp-methods">
+            <div class="rp-method selected" id="rpMethodScreen" onclick="rpSelectMethod('screen')">
+              <div class="rp-method-icon red"><i class="fas fa-desktop"></i></div>
+              <div class="rp-method-info">
+                <div class="rp-method-name">实时录屏</div>
+                <div class="rp-method-desc">共享屏幕并录制，完整捕获操作过程</div>
+                <span class="rp-method-badge">推荐</span>
+              </div>
+            </div>
+            <div class="rp-method" id="rpMethodUpload" onclick="rpSelectMethod('upload')">
+              <div class="rp-method-icon gray"><i class="fas fa-upload"></i></div>
+              <div class="rp-method-info">
+                <div class="rp-method-name">上传视频</div>
+                <div class="rp-method-desc">上传已有录屏文件（MP4、WebM）</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 上传区（upload 模式时显示） -->
+          <div id="rpUploadArea" style="display:none;margin-bottom:20px">
+            <div class="rp-upload-drop" id="rpUploadDrop">
+              <i class="fas fa-film"></i>
+              <div class="rp-upload-drop-text">拖拽视频到此处，或 <span class="rp-upload-browse" id="rpUploadBrowse">点击选择</span></div>
+              <div class="rp-upload-hint">支持 .mp4 .webm .mov，最大 500MB</div>
+            </div>
+            <div class="rp-file-pill" id="rpFilePill">
+              <i class="fas fa-film"></i>
+              <span class="rp-file-name" id="rpFileName">—</span>
+              <span class="rp-file-size" id="rpFileSize">—</span>
+              <button class="rp-file-del" id="rpFileDel"><i class="fas fa-times"></i></button>
+            </div>
+            <input type="file" id="rpUploadInput" style="display:none" accept="video/*">
+          </div>
+
+          <div class="rp-label">任务描述（可选）</div>
+          <textarea class="rp-desc-input" id="rpTaskDesc" rows="2"
+            placeholder="例如：处理客服工单、每周导出考勤报表…帮助 AI 更精准分析"></textarea>
+
+          <div class="rp-tip">
+            <i class="fas fa-info-circle"></i>
+            录屏会调用浏览器的屏幕共享对话框，你可以选择分享标签页、窗口或整个屏幕。Skill Builder 不会保存你的屏幕内容。
+          </div>
+
+          <button class="rp-btn-primary" id="rpBtnStart">
+            <i class="fas fa-video"></i> 开始录制
+          </button>
+        </div>
+
+        <!-- 阶段1：录制中 -->
+        <div class="rp-phase" id="rPhase1">
+          <div class="rp-rec-wrap">
+            <div class="rp-rec-indicator">
+              <div class="rp-rec-ring"></div>
+              <div class="rp-rec-dot"></div>
+            </div>
+            <div class="rp-rec-title">正在录制中…</div>
+            <div class="rp-rec-timer" id="rpTimer">00:00</div>
+            <div class="rp-rec-sub">完成操作后点击「停止录制」<br>AI 会自动分析你的操作步骤</div>
+            <button class="rp-stop-btn" id="rpBtnStop">
+              <i class="fas fa-stop"></i> 停止录制
+            </button>
+          </div>
+        </div>
+
+        <!-- 阶段2：预览 -->
+        <div class="rp-phase" id="rPhase2">
+          <div class="rp-preview-video">
+            <video id="rpPreviewVideo" controls></video>
+          </div>
+          <div class="rp-meta-row">
+            <div class="rp-meta-item">
+              <div class="rp-meta-icon"><i class="fas fa-clock"></i></div>
+              <div>
+                <div class="rp-meta-label">时长</div>
+                <div class="rp-meta-val" id="rpMetaDur">—</div>
+              </div>
+            </div>
+            <div class="rp-meta-item">
+              <div class="rp-meta-icon"><i class="fas fa-file-video"></i></div>
+              <div>
+                <div class="rp-meta-label">文件大小</div>
+                <div class="rp-meta-val" id="rpMetaSize">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="rp-label">任务描述</div>
+          <textarea class="rp-desc-input" id="rpPreviewDesc" rows="2"
+            placeholder="描述这段录屏的任务目标…"></textarea>
+          <button class="rp-btn-primary" id="rpBtnAnalyze" style="margin-top:4px">
+            <i class="fas fa-magic"></i> 开始分析，生成 Skill
+          </button>
+          <button class="rp-btn-secondary" id="rpBtnRedo">
+            <i class="fas fa-redo"></i> 重新录制
+          </button>
+        </div>
+
+        <!-- 阶段3：分析中 -->
+        <div class="rp-phase" id="rPhase3">
+          <div class="rp-analyze-wrap">
+            <div class="rp-spinner-wrap">
+              <div class="rp-ring"></div>
+              <div class="rp-ring2"></div>
+            </div>
+            <div class="rp-analyze-title">AI 正在分析录屏</div>
+            <div class="rp-analyze-step-label" id="rpAnalyzeLabel">正在提取关键帧…</div>
+            <div class="rp-steps-list">
+              <div class="rp-step-row active" id="rpStep0">
+                <div class="rp-step-icon"><i class="fas fa-search"></i></div>
+                <span class="rp-step-text">识别界面元素与操作动作</span>
+                <span class="rp-step-pct" id="rpStepPct0">0%</span>
+              </div>
+              <div class="rp-step-row" id="rpStep1">
+                <div class="rp-step-icon"><i class="fas fa-project-diagram"></i></div>
+                <span class="rp-step-text">理解任务意图与工作流结构</span>
+                <span class="rp-step-pct" id="rpStepPct1">—</span>
+              </div>
+              <div class="rp-step-row" id="rpStep2">
+                <div class="rp-step-icon"><i class="fas fa-magic"></i></div>
+                <span class="rp-step-text">生成 Skill 框架草稿</span>
+                <span class="rp-step-pct" id="rpStepPct2">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 阶段4：结果 -->
+        <div class="rp-phase" id="rPhase4">
+          <div class="rp-result-banner">
+            <div class="rp-result-check"><i class="fas fa-check"></i></div>
+            <div>
+              <div class="rp-result-title">分析完成，Skill 草稿已生成</div>
+              <div class="rp-result-sub">从录屏中识别到 <strong id="rpStepCount">6</strong> 个关键步骤，确认后进入编辑器</div>
+            </div>
+          </div>
+
+          <div class="rp-section-label">识别的操作步骤</div>
+          <div class="rp-extracted-steps" id="rpExtractedSteps"></div>
+
+          <div class="rp-section-label">生成的 Skill 草稿</div>
+          <div class="rp-skill-box">
+            <div class="rp-skill-hd">
+              <i class="fas fa-bolt" style="color:#111;font-size:11px"></i>
+              <span class="rp-skill-hd-label">Skill 描述预览</span>
+              <span class="rp-skill-edit-hint">可在编辑器中修改</span>
+            </div>
+            <div class="rp-skill-bd">
+              <div class="rp-skill-name" id="rpSkillName">—</div>
+              <div class="rp-skill-desc" id="rpSkillDesc">—</div>
+              <div class="rp-skill-tags" id="rpSkillTags"></div>
+              <div class="rp-skill-steps" id="rpSkillSteps"></div>
+            </div>
+          </div>
+
+          <div class="rp-result-btns">
+            <button class="rp-btn-edit" id="rpBtnToEditor">
+              <i class="fas fa-edit"></i> 继续在编辑器完善 Skill
+            </button>
+            <button class="rp-btn-restart" onclick="rpGoPhase(0)">
+              <i class="fas fa-redo"></i> 重新录制 / 换一段视频
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /recordMode -->
+    </section>
+  </div>
+</div>
+
+<!-- ZIP 弹窗 -->
+<div class="modal-mask hidden" id="zipModal">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span class="modal-hd-title">上传 Skill ZIP 包</span>
+      <button class="modal-close" id="zipClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <div class="zip-drop" id="zipDrop">
+        <div class="zip-drop-icon"><i class="fas fa-file-archive"></i></div>
+        <div class="zip-drop-text">拖拽 ZIP 文件到此处，或 <span class="zip-browse" id="zipBrowse">点击选择文件</span></div>
+        <div class="zip-drop-hint">仅支持 .zip 格式，单文件最大 50MB</div>
+      </div>
+      <div class="zip-progress hidden" id="zipProgress">
+        <div class="zip-file-row">
+          <i class="fas fa-file-archive" style="color:#111;font-size:20px"></i>
+          <div class="zip-file-info">
+            <div class="zip-filename" id="zipFilename">skill-package.zip</div>
+            <div class="zip-bar-wrap"><div class="zip-bar" id="zipBar"></div></div>
+          </div>
+          <span class="zip-pct" id="zipPct">0%</span>
+        </div>
+        <div class="zip-status" id="zipStatus">正在解析 ZIP 包…</div>
+      </div>
+    </div>
+    <div class="modal-ft hidden" id="zipFooter">
+      <button class="btn-cancel" id="zipCancel">取消</button>
+      <button class="btn-confirm" id="zipConfirm">开始生成 Skill</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="sidebar.js"></script>
+<script>SkillBuilderSidebar.render('create');</script>
+<script>
+// ══════════════════════════════════════════════════════════
+// 侧栏 & 历史
+// ══════════════════════════════════════════════════════════
+const cwApp = document.getElementById('cwApp');
+cwApp.classList.add('collapsed');
+document.getElementById('cwMenuBtn').addEventListener('click', () => cwApp.classList.toggle('collapsed'));
+document.querySelectorAll('.cw-hitem').forEach(item => {
+  item.addEventListener('click', () => { window.location.href = 'skill-editor.html'; });
+});
+
+// ══════════════════════════════════════════════════════════
+// 模式切换
+// ══════════════════════════════════════════════════════════
+let currentMode = 'text';
+document.querySelectorAll('.cw-mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset.mode;
+    if (mode === currentMode) return;
+    currentMode = mode;
+    document.querySelectorAll('.cw-mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    if (mode === 'text') {
+      document.getElementById('textMode').style.display = '';
+      document.getElementById('recordMode').classList.remove('active');
+    } else {
+      document.getElementById('textMode').style.display = 'none';
+      document.getElementById('recordMode').classList.add('active');
+      rpGoPhase(0);
+    }
+    cwMain.scrollTop = 0;
+  });
+});
+const cwMain = document.getElementById('cwMain');
+
+// ══════════════════════════════════════════════════════════
+// 文字模式：hint 轮播
+// ══════════════════════════════════════════════════════════
+const HINTS = [
+  '帮我做一个写作框架技能，可以生成深入浅出的文章',
+  '创建一个数据可视化技能，输入数据自动生成专业图表',
+  '做一个会议纪要提炼技能，自动整理讨论要点和待办',
+  '帮我做一个小红书爆款文案生成技能，带热门话题标签',
+  '创建一个多语言翻译技能，支持50种语言精准互译',
+];
+let hIdx=0, hChar=0, hTimer=null;
+const hintEl = document.getElementById('cwHintText');
+const hintBox = document.getElementById('cwHint');
+
+function tickHint(){
+  const t=HINTS[hIdx];
+  if(hChar<=t.length){ hintEl.textContent=t.slice(0,hChar); hChar++; hTimer=setTimeout(tickHint,38); }
+  else { hTimer=setTimeout(()=>{ hIdx=(hIdx+1)%HINTS.length; hChar=0; tickHint(); },3000); }
+}
+hTimer=setTimeout(tickHint,600);
+
+const ta = document.getElementById('cwTextarea');
+const composer = document.getElementById('cwComposer');
+const optBtn = document.getElementById('cwOptBtn');
+const optActions = document.getElementById('cwOptActions');
+const sendBtn = document.getElementById('cwSend');
+
+function syncUI(){
+  const has = ta.value.trim().length>0;
+  hintBox.classList.toggle('hidden', has);
+  optBtn.classList.toggle('hidden', !has || composer.classList.contains('optimized'));
+  sendBtn.style.background = has ? '#1A1A1E' : '#D8DDE6';
+}
+const _tplPrompt = new URLSearchParams(location.search).get('prompt');
+if (_tplPrompt) { ta.value = decodeURIComponent(_tplPrompt); clearTimeout(hTimer); syncUI(); }
+
+ta.addEventListener('input', syncUI);
+ta.addEventListener('keydown', e=>{
+  if(e.key==='Tab' && !ta.value.trim()){ e.preventDefault(); ta.value=HINTS[hIdx]; syncUI(); }
+});
+
+let streamTimer=null;
+function startStream(lines, onDone){
+  const el=document.getElementById('cwOptAfter');
+  el.innerHTML=''; optActions.classList.add('hidden');
+  const cursor=Object.assign(document.createElement('span'),{className:'cw-stream-cursor'});
+  let li=0,ci=0,p=null;
+  function tick(){
+    if(li>=lines.length){ cursor.remove(); onDone&&onDone(); return; }
+    if(ci===0){ p=document.createElement('p'); el.appendChild(p); }
+    const line=lines[li];
+    if(ci<line.length){ cursor.remove(); p.appendChild(document.createTextNode(line[ci])); p.appendChild(cursor); ci++; streamTimer=setTimeout(tick,18); }
+    else { cursor.remove(); li++; ci=0; streamTimer=setTimeout(tick,60); }
+    document.getElementById('cwOptView').scrollTop=9999;
+  }
+  el.appendChild(cursor); streamTimer=setTimeout(tick,80);
+}
+function stopStream(){ if(streamTimer){clearTimeout(streamTimer);streamTimer=null;} }
+
+function buildOptText(orig, retry){
+  const base = orig.includes('写作')?'将用户提供的主题自动转化为结构清晰、深入浅出的高质量文章'
+             : orig.includes('数据')||orig.includes('图表')?'将用户提供的数据自动转化为高质量可视化图表'
+             : orig.includes('PPT')?'根据用户提供的主题和受众自动生成专业级PPT大纲'
+             : '根据用户需求自动完成对应任务';
+  return [
+    `创建一款能够${base}的智能技能${retry?'，并支持用户反馈迭代优化':''}。`,
+    `1. 具备内容理解与分析能力，能够准确解析用户输入的主题和具体要求。`,
+    `2. 提供智能结构规划功能，根据内容特征自动生成合理的处理框架与执行步骤。`,
+    `3. 支持高质量内容生成与专业级润色，最终输出语言流畅、逻辑清晰的成果。`,
+  ];
+}
+
+function runOptimize(retry){
+  const orig=ta.value.trim(); if(!orig) return;
+  stopStream();
+  document.getElementById('cwOptBefore').textContent=orig;
+  composer.classList.add('optimized');
+  optBtn.classList.add('hidden'); optActions.classList.add('hidden');
+  sendBtn.style.background='#1A1A1E';
+  startStream(buildOptText(orig,retry), ()=>optActions.classList.remove('hidden'));
+}
+
+document.getElementById('cwOptBtn').addEventListener('click',()=>runOptimize(false));
+document.getElementById('cwRefresh').addEventListener('click',()=>runOptimize(true));
+document.getElementById('cwCancelOpt').addEventListener('click',()=>{
+  stopStream(); composer.classList.remove('optimized');
+  optActions.classList.add('hidden'); syncUI();
+});
+sendBtn.addEventListener('click',()=>{ if(ta.value.trim()) window.location.href='skill-editor.html'; });
+
+const addBtn=document.getElementById('cwAddBtn');
+const dd=document.getElementById('cwDropdown');
+addBtn.addEventListener('click',e=>{ e.stopPropagation(); dd.classList.toggle('open'); });
+document.addEventListener('click',()=>dd.classList.remove('open'));
+document.getElementById('cwAddLocal').addEventListener('click',()=>{ dd.classList.remove('open'); document.getElementById('cwLocalFile').click(); });
+document.getElementById('cwLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ ta.value+=(ta.value?'\n':'')+'[附件：'+f.name+']'; syncUI(); } e.target.value=''; });
+document.getElementById('cwAddDoc').addEventListener('click',()=>{ dd.classList.remove('open'); ta.value+=(ta.value?'\n':'')+'[JoySpace 文档：技能设计规范.docx]'; syncUI(); });
+document.getElementById('cwAddCli').addEventListener('click',()=>{ dd.classList.remove('open'); ta.value+=(ta.value?'\n':'')+'[CLI 引用已添加]'; syncUI(); });
+
+// ZIP
+const zipModal=document.getElementById('zipModal');
+const zipProg=document.getElementById('zipProgress');
+let zipTimer=null;
+function openZip(){ zipModal.classList.remove('hidden'); zipProg.classList.add('hidden'); document.getElementById('zipFooter').classList.add('hidden'); document.getElementById('zipBar').style.width='0%'; document.getElementById('zipDrop').classList.remove('hidden'); }
+function closeZip(){ zipModal.classList.add('hidden'); clearTimeout(zipTimer); }
+document.getElementById('cwZipBtn').addEventListener('click',openZip);
+document.getElementById('zipClose').addEventListener('click',closeZip);
+document.getElementById('zipCancel').addEventListener('click',closeZip);
+zipModal.addEventListener('click',e=>{ if(e.target===zipModal) closeZip(); });
+function startZip(file){
+  document.getElementById('zipFilename').textContent=file.name;
+  document.getElementById('zipDrop').classList.add('hidden');
+  zipProg.classList.remove('hidden'); document.getElementById('zipFooter').classList.add('hidden');
+  let pct=0;
+  const stages=[{until:30,speed:80,msg:'正在上传 ZIP 包…'},{until:65,speed:120,msg:'正在解析 ZIP 结构…'},{until:90,speed:150,msg:'正在分析 Skill 配置…'},{until:100,speed:200,msg:'解析完成，准备生成'}];
+  function tick(){
+    pct=Math.min(pct+1,100);
+    document.getElementById('zipBar').style.width=pct+'%';
+    document.getElementById('zipPct').textContent=pct+'%';
+    const s=stages.find(s=>pct<=s.until)||stages[stages.length-1];
+    document.getElementById('zipStatus').textContent=s.msg;
+    if(pct<100) zipTimer=setTimeout(tick,s.speed);
+    else document.getElementById('zipFooter').classList.remove('hidden');
+  }
+  zipTimer=setTimeout(tick,80);
+}
+document.getElementById('zipBrowse').addEventListener('click',()=>document.getElementById('cwZipFile').click());
+document.getElementById('zipDrop').addEventListener('click',()=>document.getElementById('cwZipFile').click());
+document.getElementById('cwZipFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) startZip(f); e.target.value=''; });
+document.getElementById('zipDrop').addEventListener('dragover',e=>{ e.preventDefault(); document.getElementById('zipDrop').classList.add('drag-over'); });
+document.getElementById('zipDrop').addEventListener('dragleave',()=>document.getElementById('zipDrop').classList.remove('drag-over'));
+document.getElementById('zipDrop').addEventListener('drop',e=>{ e.preventDefault(); document.getElementById('zipDrop').classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f&&f.name.endsWith('.zip')) startZip(f); });
+document.getElementById('zipConfirm').addEventListener('click',()=>{ const fn=document.getElementById('zipFilename').textContent.replace('.zip',''); ta.value='基于上传的 ZIP 包「'+fn+'」生成对应的 Skill，请解析其中的配置文件和代码结构，自动完成 Skill 构建。'; syncUI(); closeZip(); setTimeout(()=>runOptimize(false),300); });
+
+// 案例
+const EXAMPLES=[
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b21b6"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec0)"/><circle cx="0" cy="0" r="80" fill="rgba(255,255,255,.06)"/><circle cx="300" cy="100" r="90" fill="rgba(255,255,255,.06)"/><circle cx="85" cy="26" r="15" fill="rgba(255,255,255,.85)"/><path d="M56 98C56 68 114 68 114 98" fill="rgba(255,255,255,.75)"/><circle cx="150" cy="20" r="18" fill="white"/><path d="M116 98C116 62 184 62 184 98" fill="white"/><circle cx="215" cy="26" r="15" fill="rgba(255,255,255,.85)"/><path d="M186 98C186 68 244 68 244 98" fill="rgba(255,255,255,.75)"/><line x1="100" y1="24" x2="132" y2="21" stroke="rgba(255,255,255,.55)" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="100" cy="24" r="2.5" fill="rgba(255,255,255,.7)"/><line x1="168" y1="21" x2="200" y2="24" stroke="rgba(255,255,255,.55)" stroke-width="1.5" stroke-dasharray="4 3"/><circle cx="200" cy="24" r="2.5" fill="rgba(255,255,255,.7)"/></svg>',tags:[{l:'员工服务'},{l:'长程',c:'green'},{l:'多步骤',c:'orange'}],name:'新员工入职全流程助手',desc:'从 offer 接受到试用期结束，自动化入职材料收集、系统权限开通、导师匹配、培训日历生成和 30/60/90 天目标设定。',uses:3842,author:'HR中台团队',prompt:'帮我做一个新员工入职全流程助手 Skill，覆盖从 offer 接受到试用期结束的完整流程'},
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e40af"/><stop offset="1" stop-color="#3b82f6"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec1)"/><line x1="28" y1="22" x2="278" y2="22" stroke="rgba(255,255,255,.1)" stroke-width="1"/><line x1="28" y1="48" x2="278" y2="48" stroke="rgba(255,255,255,.1)" stroke-width="1"/><line x1="28" y1="74" x2="278" y2="74" stroke="rgba(255,255,255,.1)" stroke-width="1"/><rect x="30" y="56" width="36" height="38" rx="4" fill="rgba(255,255,255,.5)"/><rect x="82" y="38" width="36" height="56" rx="4" fill="rgba(255,255,255,.65)"/><rect x="134" y="66" width="36" height="28" rx="4" fill="rgba(255,255,255,.5)"/><rect x="186" y="20" width="36" height="74" rx="4" fill="rgba(255,255,255,.92)"/><rect x="238" y="44" width="36" height="50" rx="4" fill="rgba(255,255,255,.72)"/><polyline points="48,54 100,36 152,64 204,18 256,42" stroke="rgba(255,255,255,.85)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="48" cy="54" r="3.5" fill="white"/><circle cx="100" cy="36" r="3.5" fill="white"/><circle cx="152" cy="64" r="3.5" fill="white"/><circle cx="204" cy="18" r="4.5" fill="white"/><circle cx="256" cy="42" r="3.5" fill="white"/><line x1="28" y1="94" x2="278" y2="94" stroke="rgba(255,255,255,.25)" stroke-width="1.5"/></svg>',tags:[{l:'绩效管理'},{l:'长程',c:'green'},{l:'数据分析',c:'orange'}],name:'绩效评估周期管理',desc:'支持季度/年度评估周期的全生命周期管理：目标拆解对齐、360° 评分汇总、绩效分布强制排序、薪酬联动计算。',uses:2761,author:'组织效能团队',prompt:'创建一个绩效评估周期管理 Skill'},
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#065f46"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec2)"/><circle cx="0" cy="100" r="120" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2"/><circle cx="0" cy="100" r="85" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2"/><circle cx="110" cy="50" r="46" fill="rgba(255,255,255,.16)" stroke="rgba(255,255,255,.5)" stroke-width="2"/><circle cx="110" cy="50" r="34" fill="rgba(255,255,255,.2)" stroke="rgba(255,255,255,.3)" stroke-width="1"/><text x="110" y="62" text-anchor="middle" font-size="36" font-weight="700" fill="white" font-family="system-ui,sans-serif">¥</text><line x1="164" y1="32" x2="212" y2="32" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linecap="round"/><line x1="164" y1="50" x2="238" y2="50" stroke="rgba(255,255,255,.72)" stroke-width="2.5" stroke-linecap="round"/><line x1="164" y1="68" x2="212" y2="68" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linecap="round"/><polygon points="238,43 252,50 238,57" fill="rgba(255,255,255,.72)"/><circle cx="265" cy="26" r="13" fill="rgba(255,255,255,.15)" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/><text x="265" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="rgba(255,255,255,.8)" font-family="system-ui,sans-serif">¥</text><circle cx="268" cy="76" r="10" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/><text x="268" y="80" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.7)" font-family="system-ui,sans-serif">¥</text></svg>',tags:[{l:'薪酬福利'},{l:'合规',c:'orange'},{l:'自动化',c:'green'}],name:'薪酬核算与发放自动化',desc:'按月自动拉取考勤、绩效和调薪数据，完成五险一金和个税计算，生成加密薪资条并分发给员工。',uses:5130,author:'薪酬中心',prompt:'做一个薪酬核算与发放自动化 Skill'},
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a3412"/><stop offset="1" stop-color="#f97316"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec3)"/><circle cx="300" cy="0" r="100" fill="rgba(255,255,255,.05)"/><circle cx="75" cy="24" r="18" fill="rgba(255,255,255,.9)"/><path d="M40 98C40 64 110 64 110 98" fill="rgba(255,255,255,.8)"/><circle cx="225" cy="24" r="18" fill="rgba(255,255,255,.9)"/><path d="M190 98C190 64 260 64 260 98" fill="rgba(255,255,255,.8)"/><polygon points="150,14 155,32 174,32 159,43 165,61 150,50 135,61 141,43 126,32 145,32" fill="white"/><line x1="112" y1="50" x2="130" y2="50" stroke="rgba(255,255,255,.55)" stroke-width="1.5" stroke-dasharray="4 3"/><line x1="170" y1="50" x2="188" y2="50" stroke="rgba(255,255,255,.55)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>',tags:[{l:'招聘'},{l:'长程',c:'green'},{l:'AI筛选',c:'orange'}],name:'端到端智能招聘助手',desc:'从 JD 生成到候选人入职的全链路招聘管理：AI 解析简历并评分、自动安排面试、offer 谈判建议生成。',uses:1988,author:'招聘效能组',prompt:'创建一个端到端智能招聘助手 Skill'},
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#164e63"/><stop offset="1" stop-color="#0891b2"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec4)"/><circle cx="0" cy="100" r="80" fill="rgba(255,255,255,.05)"/><rect x="12" y="8" width="158" height="84" rx="8" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.5)" stroke-width="1.5"/><rect x="12" y="8" width="158" height="24" rx="8" fill="rgba(255,255,255,.28)"/><rect x="12" y="24" width="158" height="8" fill="rgba(255,255,255,.28)"/><line x1="42" y1="2" x2="42" y2="14" stroke="rgba(255,255,255,.8)" stroke-width="2.5" stroke-linecap="round"/><line x1="140" y1="2" x2="140" y2="14" stroke="rgba(255,255,255,.8)" stroke-width="2.5" stroke-linecap="round"/><circle cx="38" cy="50" r="4.5" fill="rgba(255,255,255,.9)"/><circle cx="68" cy="50" r="4.5" fill="rgba(255,255,255,.9)"/><circle cx="98" cy="50" r="4.5" fill="rgba(255,255,255,.5)"/><circle cx="128" cy="50" r="4.5" fill="rgba(255,255,255,.8)"/><circle cx="38" cy="72" r="4.5" fill="rgba(255,255,255,.6)"/><circle cx="68" cy="72" r="4.5" fill="rgba(255,255,255,.9)"/><circle cx="98" cy="72" r="4.5" fill="rgba(255,255,255,.9)"/><circle cx="128" cy="72" r="4.5" fill="rgba(255,255,255,.4)"/><rect x="186" y="10" width="104" height="56" rx="12" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/><polygon points="196,66 210,66 196,80" fill="rgba(255,255,255,.6)"/><line x1="200" y1="28" x2="278" y2="28" stroke="rgba(255,255,255,.85)" stroke-width="2.5" stroke-linecap="round"/><line x1="200" y1="42" x2="264" y2="42" stroke="rgba(255,255,255,.65)" stroke-width="2" stroke-linecap="round"/><line x1="200" y1="55" x2="246" y2="55" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linecap="round"/></svg>',tags:[{l:'协同办公'},{l:'效率',c:'green'}],name:'会议全生命周期管理',desc:'会前自动生成议程、识别日历冲突；会中实时转写；会后提炼决议、分发行动项并智能催办。',uses:4417,author:'效率工程组',prompt:'做一个会议全生命周期管理 Skill'},
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec5" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#92400e"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec5)"/><circle cx="300" cy="0" r="100" fill="rgba(255,255,255,.05)"/><path d="M150 92L34 78L34 10L150 24Z" fill="rgba(255,255,255,.88)"/><path d="M150 92L266 78L266 10L150 24Z" fill="white"/><line x1="150" y1="24" x2="150" y2="92" stroke="rgba(130,70,0,.45)" stroke-width="2"/><line x1="50" y1="24" x2="140" y2="29" stroke="rgba(100,50,0,.22)" stroke-width="1.5" stroke-linecap="round"/><line x1="50" y1="37" x2="140" y2="42" stroke="rgba(100,50,0,.22)" stroke-width="1.5" stroke-linecap="round"/><line x1="50" y1="50" x2="140" y2="55" stroke="rgba(100,50,0,.22)" stroke-width="1.5" stroke-linecap="round"/><line x1="50" y1="63" x2="140" y2="68" stroke="rgba(100,50,0,.22)" stroke-width="1.5" stroke-linecap="round"/><line x1="160" y1="29" x2="250" y2="24" stroke="rgba(100,50,0,.15)" stroke-width="1.5" stroke-linecap="round"/><line x1="160" y1="42" x2="250" y2="37" stroke="rgba(100,50,0,.15)" stroke-width="1.5" stroke-linecap="round"/><line x1="160" y1="55" x2="250" y2="50" stroke="rgba(100,50,0,.15)" stroke-width="1.5" stroke-linecap="round"/><line x1="160" y1="68" x2="250" y2="63" stroke="rgba(100,50,0,.15)" stroke-width="1.5" stroke-linecap="round"/><circle cx="128" cy="7" r="4" fill="rgba(255,255,255,.9)"/><circle cx="150" cy="2" r="6" fill="white"/><circle cx="172" cy="7" r="4" fill="rgba(255,255,255,.9)"/><circle cx="140" cy="10" r="2.5" fill="rgba(255,255,255,.7)"/><circle cx="160" cy="10" r="2.5" fill="rgba(255,255,255,.7)"/></svg>',tags:[{l:'学习发展'},{l:'个性化',c:'orange'},{l:'长程',c:'green'}],name:'员工培训体系管理',desc:'基于岗位能力模型和员工历史学习数据，自动生成个性化培训计划；追踪完成率；识别高潜人才。',uses:1543,author:'人才发展中心',prompt:'创建一个员工培训体系管理 Skill'},
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec6" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#881337"/><stop offset="1" stop-color="#f43f5e"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec6)"/><circle cx="280" cy="10" r="80" fill="rgba(255,255,255,.06)"/><rect x="64" y="4" width="172" height="92" rx="8" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/><polygon points="208,4 236,4 236,30" fill="rgba(255,255,255,.25)"/><line x1="208" y1="4" x2="208" y2="30" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/><line x1="208" y1="30" x2="236" y2="30" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/><circle cx="88" cy="26" r="8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><polyline points="84,26 87,30 94,21" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="102" y1="26" x2="196" y2="26" stroke="rgba(255,255,255,.65)" stroke-width="2" stroke-linecap="round"/><circle cx="88" cy="48" r="8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><polyline points="84,48 87,52 94,43" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="102" y1="48" x2="196" y2="48" stroke="rgba(255,255,255,.65)" stroke-width="2" stroke-linecap="round"/><circle cx="88" cy="70" r="8" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><polyline points="84,70 87,74 94,65" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="102" y1="70" x2="196" y2="70" stroke="rgba(255,255,255,.65)" stroke-width="2" stroke-linecap="round"/><circle cx="88" cy="88" r="8" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/><line x1="102" y1="88" x2="180" y2="88" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-linecap="round"/></svg>',tags:[{l:'协同办公'},{l:'审批',c:'gray'},{l:'自动化',c:'green'}],name:'OA审批全流程智能助手',desc:'统一管理差旅、采购、用章等多类审批，自动识别类型并路由审批链，超期自动升级提醒。',uses:6209,author:'数字化办公组',prompt:'做一个 OA 审批全流程智能助手 Skill'},
+  {cover:'<svg viewBox="0 0 300 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ec7" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e293b"/><stop offset="1" stop-color="#475569"/></linearGradient></defs><rect width="300" height="100" fill="url(#ec7)"/><circle cx="150" cy="50" r="72" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="18"/><circle cx="150" cy="50" r="46" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.6)" stroke-width="2"/><circle cx="150" cy="50" r="38" fill="rgba(255,255,255,.08)"/><line x1="150" y1="7" x2="150" y2="16" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/><line x1="193" y1="50" x2="184" y2="50" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/><line x1="150" y1="93" x2="150" y2="84" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/><line x1="107" y1="50" x2="116" y2="50" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/><line x1="173" y1="11" x2="170" y2="18" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="189" y1="27" x2="183" y2="30" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="189" y1="73" x2="183" y2="70" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="173" y1="89" x2="170" y2="82" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="127" y1="11" x2="130" y2="18" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="111" y1="27" x2="117" y2="30" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="111" y1="73" x2="117" y2="70" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="127" y1="89" x2="130" y2="82" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="150" y1="50" x2="133" y2="26" stroke="white" stroke-width="4" stroke-linecap="round"/><line x1="150" y1="50" x2="174" y2="22" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="150" cy="50" r="4.5" fill="white"/><circle cx="30" cy="30" r="16" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/><circle cx="270" cy="72" r="13" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8"/></svg>',tags:[{l:'员工服务'},{l:'考勤',c:'gray'}],name:'考勤异常智能处理',desc:'每日汇总打卡异常，按规则分类，向员工推送补卡引导，月末生成考勤报表供 HR 审核。',uses:8834,author:'员工服务中台',prompt:'创建一个考勤异常智能处理 Skill'},
+];
+const exGrid=document.getElementById('exGrid');
+let exPage=0, exLoading=false;
+const sentinel=document.createElement('div');
+sentinel.className='cw-load-more';
+sentinel.innerHTML='<span class="cw-load-spinner"><i class="fas fa-circle-notch"></i> 加载中…</span>';
+function fmtN(n){ return n>=10000?(n/10000).toFixed(1)+'w':n>=1000?(n/1000).toFixed(1)+'k':n; }
+function renderExPage(){
+  const PAGE=8, start=exPage*PAGE, items=EXAMPLES.slice(start,start+PAGE);
+  if(!items.length){ sentinel.remove(); return; }
+  items.forEach(ex=>{
+    const card=document.createElement('div');
+    card.className='ex-card'; card.dataset.prompt=ex.prompt;
+    card.innerHTML=`<div class="ex-cover">${ex.cover}</div>
+      <div class="ex-body">
+        <div class="ex-tags">${(ex.tags||[]).map(t=>`<span class="ex-tag ${t.c||''}">${t.l}</span>`).join('')}</div>
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-desc">${ex.desc}</div>
+        <div class="ex-footer"><span class="ex-uses"><i class="fas fa-bolt"></i> 被引用 ${fmtN(ex.uses)} 次</span><span class="ex-author">${ex.author}</span></div>
+      </div>`;
+    exGrid.appendChild(card);
+  });
+  exPage++;
+  if(exPage*PAGE<EXAMPLES.length) exGrid.after(sentinel); else sentinel.remove();
+}
+const obs=new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting&&!exLoading){ exLoading=true; setTimeout(()=>{ renderExPage(); exLoading=false; },600); }
+},{ root:cwMain, threshold:0.1 });
+renderExPage(); obs.observe(sentinel);
+exGrid.addEventListener('click',e=>{
+  const card=e.target.closest('.ex-card'); if(!card) return;
+  stopStream(); composer.classList.remove('optimized'); optActions.classList.add('hidden');
+  ta.value=card.dataset.prompt; ta.focus(); syncUI();
+});
+const RECENT=[
+  {emoji:'👥',name:'新员工入职全流程助手',desc:'从 offer 接受到试用期结束，自动化入职材料收集和系统权限开通。',status:'编辑中',time:'5分钟前',prompt:'帮我做一个新员工入职全流程助手 Skill'},
+  {emoji:'📊',name:'绩效评估周期管理',desc:'支持季度/年度评估周期的全生命周期管理，目标拆解和薪酬联动。',status:'已发布',time:'2小时前',prompt:'创建一个绩效评估周期管理 Skill'},
+  {emoji:'📅',name:'会议全生命周期管理',desc:'会前生成议程、会中转写、会后分发行动项并智能催办。',status:'已发布',time:'昨天 17:30',prompt:'做一个会议全生命周期管理 Skill'},
+  {emoji:'💰',name:'薪酬核算与发放自动化',desc:'按月自动完成五险一金和个税计算，生成加密薪资条。',status:'草稿',time:'昨天 14:12',prompt:'做一个薪酬核算与发放自动化 Skill'},
+];
+const STATUS_CLS={'编辑中':'editing','已发布':'published','草稿':'draft'};
+function renderRecent(){
+  const rcGrid=document.getElementById('rcGrid');
+  rcGrid.innerHTML=RECENT.map(sk=>`
+    <div class="rc-card" data-prompt="${sk.prompt}">
+      <div class="rc-top">
+        <div class="rc-icon">${sk.emoji}</div>
+        <div class="rc-info">
+          <div class="rc-name">${sk.name}</div>
+          <div class="rc-desc">${sk.desc}</div>
+          <span class="rc-badge ${STATUS_CLS[sk.status]||'draft'}">${sk.status}</span>
+        </div>
+      </div>
+      <div class="rc-bottom">
+        <div class="rc-avatar">贾</div>
+        <span class="rc-user">贾世霖</span>
+        <span class="rc-time">${sk.time}</span>
+      </div>
+    </div>`).join('');
+  rcGrid.addEventListener('click',e=>{
+    const card=e.target.closest('.rc-card'); if(!card) return;
+    stopStream(); composer.classList.remove('optimized'); optActions.classList.add('hidden');
+    ta.value=card.dataset.prompt; ta.focus(); syncUI();
+  });
+}
+document.querySelectorAll('.cw-ex-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.cw-ex-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const which=tab.dataset.tab;
+    document.getElementById('showcasePane').style.display=which==='showcase'?'':'none';
+    document.getElementById('recentPane').style.display=which==='recent'?'':'none';
+    if(which==='recent') renderRecent();
+  });
+});
+syncUI();
+
+// ══════════════════════════════════════════════════════════
+// 录屏模式
+// ══════════════════════════════════════════════════════════
+let rpMethod = 'screen';
+let rpUploadedFile = null;
+let rpRecordedBlob = null;
+let rpMediaStream = null;
+let rpMediaRecorder = null;
+let rpRecordedChunks = [];
+let rpTimerInterval = null;
+let rpRecordSeconds = 0;
+
+function rpGoPhase(n) {
+  document.querySelectorAll('.rp-phase').forEach((el,i) => el.classList.toggle('active', i===n));
+  cwMain.scrollTop = 0;
+}
+
+// 方式选择
+function rpSelectMethod(method) {
+  rpMethod = method;
+  document.getElementById('rpMethodScreen').classList.toggle('selected', method==='screen');
+  document.getElementById('rpMethodUpload').classList.toggle('selected', method==='upload');
+  document.getElementById('rpUploadArea').style.display = method==='upload' ? 'block' : 'none';
+  const btn = document.getElementById('rpBtnStart');
+  btn.innerHTML = method==='upload'
+    ? '<i class="fas fa-upload"></i> 上传并分析'
+    : '<i class="fas fa-video"></i> 开始录制';
+  rpUpdateStartBtn();
+}
+
+function rpUpdateStartBtn() {
+  document.getElementById('rpBtnStart').disabled = rpMethod==='upload' && !rpUploadedFile;
+}
+
+// 上传文件
+const rpUploadInput = document.getElementById('rpUploadInput');
+document.getElementById('rpUploadBrowse').addEventListener('click', () => rpUploadInput.click());
+document.getElementById('rpUploadDrop').addEventListener('click', () => rpUploadInput.click());
+rpUploadInput.addEventListener('change', e => { const f=e.target.files[0]; if(f) rpHandleFile(f); e.target.value=''; });
+document.getElementById('rpUploadDrop').addEventListener('dragover', e => { e.preventDefault(); document.getElementById('rpUploadDrop').classList.add('drag-over'); });
+document.getElementById('rpUploadDrop').addEventListener('dragleave', () => document.getElementById('rpUploadDrop').classList.remove('drag-over'));
+document.getElementById('rpUploadDrop').addEventListener('drop', e => {
+  e.preventDefault(); document.getElementById('rpUploadDrop').classList.remove('drag-over');
+  const f=e.dataTransfer.files[0]; if(f) rpHandleFile(f);
+});
+document.getElementById('rpFileDel').addEventListener('click', () => {
+  rpUploadedFile = null;
+  document.getElementById('rpUploadDrop').style.display = '';
+  document.getElementById('rpFilePill').classList.remove('visible');
+  rpUpdateStartBtn();
+});
+
+function rpHandleFile(file) {
+  rpUploadedFile = file;
+  document.getElementById('rpUploadDrop').style.display = 'none';
+  document.getElementById('rpFilePill').classList.add('visible');
+  document.getElementById('rpFileName').textContent = file.name;
+  document.getElementById('rpFileSize').textContent = rpFmtBytes(file.size);
+  rpUpdateStartBtn();
+}
+
+// 开始按钮
+document.getElementById('rpBtnStart').addEventListener('click', async () => {
+  if (rpMethod === 'upload') {
+    rpRecordedBlob = rpUploadedFile;
+    rpShowPreview(rpUploadedFile, null);
+  } else {
+    await rpStartRecord();
+  }
+});
+
+// 实时录屏
+async function rpStartRecord() {
+  try {
+    rpMediaStream = await navigator.mediaDevices.getDisplayMedia({ video:{frameRate:15}, audio:true });
+  } catch(err) {
+    if (err.name !== 'NotAllowedError') alert('录屏启动失败：' + err.message);
+    return;
+  }
+  rpRecordedChunks = [];
+  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+  rpMediaRecorder = new MediaRecorder(rpMediaStream, { mimeType: mime });
+  rpMediaRecorder.ondataavailable = e => { if(e.data&&e.data.size>0) rpRecordedChunks.push(e.data); };
+  rpMediaRecorder.onstop = rpFinalizeRecord;
+  rpMediaRecorder.start(1000);
+  rpMediaStream.getVideoTracks()[0].addEventListener('ended', () => rpStopRecord());
+  rpGoPhase(1);
+  rpRecordSeconds = 0; rpUpdateTimer();
+  rpTimerInterval = setInterval(() => { rpRecordSeconds++; rpUpdateTimer(); }, 1000);
+}
+
+function rpUpdateTimer() {
+  const m=String(Math.floor(rpRecordSeconds/60)).padStart(2,'0');
+  const s=String(rpRecordSeconds%60).padStart(2,'0');
+  document.getElementById('rpTimer').textContent = m+':'+s;
+}
+
+document.getElementById('rpBtnStop').addEventListener('click', rpStopRecord);
+function rpStopRecord() {
+  clearInterval(rpTimerInterval);
+  if (rpMediaRecorder && rpMediaRecorder.state!=='inactive') rpMediaRecorder.stop();
+  if (rpMediaStream) rpMediaStream.getTracks().forEach(t=>t.stop());
+}
+function rpFinalizeRecord() {
+  rpRecordedBlob = new Blob(rpRecordedChunks, {type:'video/webm'});
+  rpShowPreview(rpRecordedBlob, rpRecordSeconds);
+}
+
+// 预览
+function rpShowPreview(blob, durationSec) {
+  const url = URL.createObjectURL(blob);
+  const vid = document.getElementById('rpPreviewVideo');
+  vid.src = url;
+  if (durationSec !== null) {
+    document.getElementById('rpMetaDur').textContent = rpFmtDur(durationSec);
+  } else {
+    vid.onloadedmetadata = () => {
+      document.getElementById('rpMetaDur').textContent = rpFmtDur(Math.round(vid.duration));
+    };
+  }
+  document.getElementById('rpMetaSize').textContent = rpFmtBytes(blob.size);
+  document.getElementById('rpPreviewDesc').value = document.getElementById('rpTaskDesc').value;
+  rpGoPhase(2);
+}
+
+document.getElementById('rpBtnRedo').addEventListener('click', () => {
+  rpRecordedBlob = null; rpUploadedFile = null;
+  document.getElementById('rpUploadDrop').style.display = '';
+  document.getElementById('rpFilePill').classList.remove('visible');
+  rpGoPhase(0);
+});
+document.getElementById('rpBtnAnalyze').addEventListener('click', rpStartAnalysis);
+
+// 分析
+const RP_ANALYZE_STEPS = [
+  { id:'rpStep0', pctId:'rpStepPct0', label:'识别界面元素与操作动作…', icon:'fas fa-search',          dur:2800 },
+  { id:'rpStep1', pctId:'rpStepPct1', label:'理解任务意图与工作流…',   icon:'fas fa-project-diagram', dur:2400 },
+  { id:'rpStep2', pctId:'rpStepPct2', label:'生成 Skill 框架草稿…',   icon:'fas fa-magic',           dur:1800 },
+];
+
+function rpStartAnalysis() {
+  rpGoPhase(3);
+  RP_ANALYZE_STEPS.forEach((s,i) => {
+    const row = document.getElementById(s.id);
+    row.className = 'rp-step-row' + (i===0?' active':'');
+    document.getElementById(s.pctId).textContent = i===0?'0%':'—';
+    row.querySelector('.rp-step-icon').innerHTML = `<i class="${s.icon}"></i>`;
+  });
+  rpRunStep(0);
+}
+
+function rpRunStep(idx) {
+  if (idx >= RP_ANALYZE_STEPS.length) { setTimeout(rpShowResult, 400); return; }
+  const s = RP_ANALYZE_STEPS[idx];
+  const row = document.getElementById(s.id);
+  const pctEl = document.getElementById(s.pctId);
+  document.getElementById('rpAnalyzeLabel').textContent = s.label;
+  let pct=0;
+  const interval = setInterval(() => {
+    pct = Math.min(pct + Math.round(100/(s.dur/80)*(0.8+Math.random()*.4)), 100);
+    pctEl.textContent = pct+'%';
+    if (pct>=100) {
+      clearInterval(interval);
+      row.className='rp-step-row done';
+      row.querySelector('.rp-step-icon').innerHTML='<i class="fas fa-check"></i>';
+      if (idx+1 < RP_ANALYZE_STEPS.length) {
+        const next = document.getElementById(RP_ANALYZE_STEPS[idx+1].id);
+        next.className='rp-step-row active';
+        next.querySelector('.rp-step-icon').innerHTML=`<i class="${RP_ANALYZE_STEPS[idx+1].icon}"></i>`;
+      }
+      setTimeout(()=>rpRunStep(idx+1), 300);
+    }
+  }, 80);
+}
+
+// 结果
+const RP_MOCK = {
+  skillName: '操作流程自动化 Skill',
+  skillDesc: '基于录屏分析，自动识别用户在系统中的操作路径，将重复性工作流封装为可一键执行的 Skill，减少手动操作时间。',
+  tags: [{label:'自动化',cls:'purple'},{label:'流程提取',cls:'blue'},{label:'效率工具'}],
+  steps: [
+    {action:'打开目标系统',detail:'用户导航至目标页面，系统识别到登录态与页面上下文'},
+    {action:'输入查询条件',detail:'识别到用户在搜索框中填写筛选参数的操作'},
+    {action:'执行数据筛选',detail:'点击「查询」按钮，等待数据列表加载完成'},
+    {action:'选择目标记录',detail:'勾选符合条件的数据行，进入详情操作界面'},
+    {action:'批量处理并确认',detail:'对选中记录执行批量操作，填写备注并提交确认'},
+    {action:'导出结果文件',detail:'点击「导出」，选择 Excel 格式，等待文件下载完成'},
+  ],
+};
+
+function rpShowResult() {
+  document.getElementById('rpStepCount').textContent = RP_MOCK.steps.length;
+  document.getElementById('rpSkillName').textContent = RP_MOCK.skillName;
+  document.getElementById('rpSkillDesc').textContent = RP_MOCK.skillDesc;
+  document.getElementById('rpSkillTags').innerHTML = RP_MOCK.tags.map(t=>
+    `<span class="rp-skill-tag ${t.cls||''}">${t.label}</span>`).join('');
+  document.getElementById('rpExtractedSteps').innerHTML = RP_MOCK.steps.map((s,i)=>`
+    <div class="rp-extracted-row" id="rpERow${i}">
+      <div class="rp-extracted-num">${i+1}</div>
+      <div class="rp-extracted-content">
+        <div class="rp-extracted-action">${s.action}</div>
+        <div class="rp-extracted-detail">${s.detail}</div>
+      </div>
+      <button class="rp-extracted-del" onclick="rpDeleteStep(${i})"><i class="fas fa-times"></i></button>
+    </div>`).join('');
+  document.getElementById('rpSkillSteps').innerHTML = RP_MOCK.steps.map((s,i)=>
+    `<div class="rp-skill-step" data-n="${i+1}.">${s.action}：${s.detail}</div>`).join('');
+  rpGoPhase(4);
+}
+
+function rpDeleteStep(i) {
+  const el=document.getElementById('rpERow'+i);
+  if(el){ el.style.opacity='0'; el.style.transition='opacity .2s'; setTimeout(()=>el.remove(),200); }
+}
+
+function rpFmtDur(s) { return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function rpFmtBytes(b) {
+  if(b<1024) return b+' B';
+  if(b<1048576) return (b/1024).toFixed(1)+' KB';
+  return (b/1048576).toFixed(1)+' MB';
+}
+
+// 进入编辑器：保存对话历史，下次打开 create 可见
+document.getElementById('rpBtnToEditor').addEventListener('click', () => {
+  const skillName = document.getElementById('rpSkillName').textContent || RP_MOCK.skillName;
+  // 保存到 sessionStorage，create.html 加载时读取并插入历史
+  try {
+    const existing = JSON.parse(sessionStorage.getItem('cwHistory') || '[]');
+    existing.unshift({ name: skillName, time: '刚刚', source: 'record' });
+    sessionStorage.setItem('cwHistory', JSON.stringify(existing.slice(0, 20)));
+  } catch(e) {}
+  window.location.href = 'skill-editor.html';
+});
+
+// 页面加载时：读取 sessionStorage 里的历史并插入侧栏顶部
+(function loadSavedHistory() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('cwHistory') || '[]');
+    if (!saved.length) return;
+    const todayGroup = document.querySelector('.cw-hgroup');
+    if (!todayGroup) return;
+    const content = todayGroup.querySelector('.cw-history-content') || todayGroup.parentElement;
+    saved.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'cw-hitem';
+      div.innerHTML = `<i class="fas fa-video" style="color:#E11D48"></i><span>${item.name}</span>`;
+      div.addEventListener('click', () => { window.location.href = 'skill-editor.html'; });
+      todayGroup.insertBefore(div, todayGroup.querySelector('.cw-hitem'));
+    });
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

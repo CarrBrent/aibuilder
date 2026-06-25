@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Skillhub — Skill Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    :root {
+      --border: #eceef2; --surface: #fff; --bg: #f5f6fa;
+      --t1: #111; --t2: #555; --t3: #999;
+      --r8: 8px; --r12: 12px; --r16: 16px;
+    }
+    .page-shell { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+
+    /* ── Header ── */
+    .page-header {
+      height:52px; background:var(--surface); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; padding:0 24px; gap:16px; flex-shrink:0;
+    }
+    .page-title { font-size:15px; font-weight:700; color:var(--t1); }
+    .header-search {
+      display:flex; align-items:center; gap:8px;
+      background:var(--bg); border:1px solid var(--border); border-radius:var(--r8);
+      padding:7px 12px; width:240px; transition:border-color .15s, background .15s;
+    }
+    .header-search:focus-within { border-color:#bbb; background:#fff; }
+    .header-search i { color:var(--t3); font-size:13px; }
+    .header-search input { border:none; outline:none; background:transparent; font-size:13px; color:var(--t1); flex:1; }
+    .header-search input::placeholder { color:var(--t3); }
+    .header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .btn-primary {
+      padding:7px 16px; border-radius:24px; background:var(--t1); color:#fff;
+      font-size:13px; font-weight:600; border:none; cursor:pointer; text-decoration:none;
+      display:inline-flex; align-items:center; gap:6px; transition:opacity .12s;
+    }
+    .btn-primary:hover { opacity:.82; }
+    .btn-ghost {
+      padding:7px 14px; border-radius:24px; background:var(--surface); color:var(--t2);
+      font-size:13px; font-weight:500; border:1px solid var(--border); cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; transition:border-color .12s, color .12s;
+    }
+    .btn-ghost:hover { border-color:#bbb; color:var(--t1); }
+    .page-body { flex:1; overflow-y:auto; padding:24px; }
+
+    /* ── Banner ── */
+    .banner-row { display:flex; gap:14px; margin-bottom:20px; align-items:stretch; }
+
+    .banner-featured {
+      flex:1; min-width:0; border-radius:var(--r16); position:relative; overflow:hidden;
+      background:linear-gradient(135deg, #0b1a3a 0%, #122c5d 35%, #1a3f82 65%, #1d5299 100%);
+      padding:28px 32px 52px; color:#fff; display:flex; flex-direction:column;
+    }
+    .banner-kicker {
+      display:inline-flex; align-items:center; gap:5px; align-self:flex-start;
+      font-size:11px; font-weight:700; letter-spacing:.8px;
+      background:rgba(255,255,255,.14); border-radius:20px; padding:3px 10px;
+      margin-bottom:14px;
+    }
+    .banner-title { font-size:24px; font-weight:800; line-height:1.25; margin-bottom:8px; }
+    .banner-desc {
+      font-size:13px; line-height:1.6; color:rgba(255,255,255,.72);
+      max-width:420px; margin-bottom:18px; flex:1;
+    }
+    .banner-footer { display:flex; align-items:center; gap:14px; }
+    .banner-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 18px; border-radius:24px; font-size:13px; font-weight:600;
+      background:#fff; color:#111; border:none; cursor:pointer; transition:opacity .12s;
+    }
+    .banner-btn:hover { opacity:.88; }
+    .banner-author { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,255,255,.6); }
+    .banner-author-av {
+      width:20px; height:20px; border-radius:50%;
+      background:rgba(255,255,255,.22); font-size:9px; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .banner-controls {
+      position:absolute; bottom:15px; left:32px; right:16px;
+      display:flex; align-items:center;
+    }
+    .banner-dots { display:flex; gap:5px; flex:1; align-items:center; }
+    .banner-dot { width:5px; height:5px; border-radius:9999px; background:rgba(255,255,255,.3); cursor:pointer; transition:all .2s; }
+    .banner-dot.active { background:#fff; width:14px; }
+    .banner-arrows { display:flex; gap:6px; }
+    .banner-arrow {
+      width:28px; height:28px; border-radius:50%;
+      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:11px; color:#fff; transition:background .12s;
+    }
+    .banner-arrow:hover { background:rgba(255,255,255,.26); }
+
+    .banner-stats {
+      width:210px; flex-shrink:0;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--r16);
+      display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+    }
+    .b-stat {
+      padding:16px 14px; display:flex; flex-direction:column; justify-content:center;
+      border-bottom:1px solid var(--border);
+    }
+    .b-stat:nth-child(odd)  { border-right:1px solid var(--border); }
+    .b-stat:nth-child(3), .b-stat:nth-child(4) { border-bottom:none; }
+    .b-stat-num { font-size:16px; font-weight:800; color:var(--t1); line-height:1; margin-bottom:5px; }
+    .b-stat-label { font-size:11px; color:var(--t3); line-height:1.3; }
+
+    /* ── Category tabs ── */
+    .cat-row {
+      display:flex; align-items:center; gap:6px;
+      overflow-x:auto; scrollbar-width:none;
+      padding-bottom:2px; margin-bottom:20px;
+    }
+    .cat-row::-webkit-scrollbar { display:none; }
+    .cat-btn {
+      padding:6px 14px; border-radius:20px; font-size:13px; font-weight:500;
+      border:1px solid var(--border); background:var(--surface); color:var(--t2);
+      cursor:pointer; white-space:nowrap; flex-shrink:0; transition:all .12s;
+    }
+    .cat-btn:hover { border-color:#bbb; color:var(--t1); }
+    .cat-btn.active { background:var(--t1); color:#fff; border-color:var(--t1); }
+
+    /* ── Two-column layout ── */
+    .main-cols { display:flex; gap:20px; }
+    .main-left { flex:1; min-width:0; }
+    .main-right { width:240px; flex-shrink:0; }
+
+    .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .section-title { font-size:14px; font-weight:700; color:var(--t1); }
+    .section-more {
+      font-size:12px; color:var(--t2); cursor:pointer; text-decoration:none;
+      display:flex; align-items:center; gap:3px; transition:color .12s;
+    }
+    .section-more:hover { color:var(--t1); }
+
+    /* ── Skill cards ── */
+    .skill-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+    .skill-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--r12);
+      display:flex; gap:12px; padding:14px 14px 12px; cursor:pointer;
+      transition:box-shadow .15s, border-color .15s, transform .15s;
+    }
+    .skill-card:hover {
+      border-color:#d0d3db;
+      box-shadow:0 4px 16px rgba(0,0,0,.07);
+      transform:translateY(-1px);
+    }
+    .skill-icon {
+      width:48px; height:48px; border-radius:10px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:22px;
+    }
+    .skill-info { flex:1; min-width:0; }
+    .skill-name-row { display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+    .skill-name {
+      font-size:13px; font-weight:700; color:var(--t1);
+      flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .badge-official { flex-shrink:0; font-size:10px; font-weight:600; color:#1765cc; background:#e8f0fe; border-radius:4px; padding:1px 5px; white-space:nowrap; }
+    .badge-hot      { flex-shrink:0; font-size:10px; font-weight:600; color:#b45309; background:#fef3c7; border-radius:4px; padding:1px 5px; white-space:nowrap; }
+    .badge-new      { flex-shrink:0; font-size:10px; font-weight:600; color:#047857; background:#d1fae5; border-radius:4px; padding:1px 5px; white-space:nowrap; }
+    .skill-author {
+      font-size:11px; color:var(--t3); margin-bottom:5px;
+      display:flex; align-items:center; gap:4px;
+    }
+    .skill-author-av {
+      width:14px; height:14px; border-radius:50%;
+      background:#666; color:#fff; font-size:8px; font-weight:700;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .skill-desc {
+      font-size:12px; color:var(--t2); line-height:1.55;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+      margin-bottom:8px;
+    }
+    .skill-footer { display:flex; align-items:center; gap:7px; }
+    .skill-meta { font-size:11px; color:var(--t3); display:flex; align-items:center; gap:2px; }
+    .skill-meta i { font-size:10px; }
+    .skill-install {
+      margin-left:auto; padding:4px 12px; border-radius:6px; flex-shrink:0;
+      background:transparent; color:var(--t1); font-size:12px; font-weight:600;
+      border:1px solid var(--border); cursor:pointer;
+      transition:background .12s, border-color .12s;
+    }
+    .skill-install:hover { background:var(--bg); border-color:#bbb; }
+
+    /* ── Right panels ── */
+    .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--r12); padding:16px; margin-bottom:12px; }
+    .panel-title { font-size:13px; font-weight:700; color:var(--t1); margin-bottom:10px; }
+    .rank-tabs { display:flex; gap:0; margin-bottom:10px; border-bottom:1px solid var(--border); }
+    .rank-tab {
+      font-size:12px; font-weight:500; color:var(--t3); padding:0 10px 7px;
+      cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .12s;
+    }
+    .rank-tab.active { color:var(--t1); font-weight:700; border-bottom-color:var(--t1); }
+    .rank-item { display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid var(--bg); }
+    .rank-item:last-child { border-bottom:none; }
+    .rank-num { width:20px; font-size:12px; font-weight:700; color:var(--t3); flex-shrink:0; text-align:center; }
+    .rank-icon { width:28px; height:28px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; background:var(--bg); }
+    .rank-name { font-size:12px; font-weight:600; color:var(--t1); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rank-count { font-size:11px; color:var(--t3); flex-shrink:0; display:flex; align-items:center; gap:2px; }
+    .contributor-item { display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid var(--bg); }
+    .contributor-item:last-child { border-bottom:none; }
+    .contributor-av { width:30px; height:30px; border-radius:50%; font-size:12px; font-weight:700; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .contributor-info { flex:1; min-width:0; }
+    .contributor-name { font-size:12px; font-weight:600; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .contributor-sub { font-size:11px; color:var(--t3); }
+    .contributor-dl { font-size:11px; color:var(--t3); display:flex; align-items:center; gap:2px; flex-shrink:0; }
+    .contribute-card {
+      background:var(--bg); border:1px solid var(--border); border-radius:var(--r12);
+      padding:16px; margin-bottom:12px;
+    }
+    .contribute-card .panel-title { margin-bottom:6px; }
+    .contribute-desc { font-size:12px; color:var(--t2); line-height:1.6; margin-bottom:12px; }
+
+    /* ── Page toolbar ── */
+    .page-toolbar {
+      display:flex; align-items:center; gap:10px;
+      padding:0 24px; height:48px; background:#fff;
+      border-bottom:1px solid #eceef2; flex-shrink:0;
+    }
+    .toolbar-search {
+      display:flex; align-items:center; gap:8px;
+      background:#f5f6fa; border:1px solid #eceef2; border-radius:8px;
+      padding:6px 12px; width:240px; transition:border-color .15s;
+    }
+    .toolbar-search:focus-within { border-color:#bbb; background:#fff; }
+    .toolbar-search i { color:#999; font-size:13px; }
+    .toolbar-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
+    .toolbar-search input::placeholder { color:#999; }
+    .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .content-toolbar {
+      display:flex; align-items:center; gap:10px; margin-bottom:20px;
+    }
+    .content-toolbar .toolbar-search {
+      display:flex; align-items:center; gap:8px;
+      background:#fff; border:1px solid #eceef2; border-radius:8px;
+      padding:7px 12px; width:240px; transition:border-color .15s;
+    }
+    .content-toolbar .toolbar-search:focus-within { border-color:#bbb; }
+    .content-toolbar .toolbar-search i { color:#999; font-size:13px; }
+    .content-toolbar .toolbar-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
+    .content-toolbar .toolbar-search input::placeholder { color:#999; }
+    .content-toolbar .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  </style>
+</head>
+<body>
+<div class="page-shell">
+
+  <!-- Header -->
+  <div class="page-header">
+    <span class="page-title">Skillhub</span>
+  </div>
+
+  <div class="page-body">
+    <div class="content-toolbar">
+      <div class="toolbar-search">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="搜索技能、作者..."/>
+    </div>
+      <div class="toolbar-end">
+      <button class="btn-ghost"><i class="fas fa-file-import"></i> 导入技能</button>
+      <a href="create.html" class="btn-primary"><i class="fas fa-plus"></i> 新建技能</a>
+    </div>
+    </div>
+
+    <!-- Banner: featured carousel + stats -->
+    <div class="banner-row">
+      <div class="banner-featured">
+        <div class="banner-kicker"><i class="fas fa-star" style="font-size:9px"></i>&nbsp;本周精选</div>
+        <div class="banner-title">OfficeCLI<br/>一站式文档处理</div>
+        <div class="banner-desc">上手零门槛，随心操作各类 Office 文档——PPT、Word、Excel，让 AI 替你搞定繁琐文档工作。</div>
+        <div class="banner-footer">
+          <button class="banner-btn"><i class="fas fa-download"></i> 立即安装</button>
+          <div class="banner-author">
+            <div class="banner-author-av">J</div>
+            <span>joyClaw官方</span>
+            <span style="opacity:.4">·</span>
+            <span><i class="fas fa-download" style="font-size:10px"></i> 5.5k</span>
+          </div>
+        </div>
+        <div class="banner-controls">
+          <div class="banner-dots">
+            <div class="banner-dot active"></div>
+            <div class="banner-dot"></div>
+            <div class="banner-dot"></div>
+            <div class="banner-dot"></div>
+          </div>
+          <div class="banner-arrows">
+            <div class="banner-arrow"><i class="fas fa-chevron-left"></i></div>
+            <div class="banner-arrow"><i class="fas fa-chevron-right"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="banner-stats">
+        <div class="b-stat">
+          <div class="b-stat-num">4,740</div>
+          <div class="b-stat-label">技能库总量</div>
+        </div>
+        <div class="b-stat">
+          <div class="b-stat-num">8.3万</div>
+          <div class="b-stat-label">累计下载安装</div>
+        </div>
+        <div class="b-stat">
+          <div class="b-stat-num">108.7万</div>
+          <div class="b-stat-label">日调用次数</div>
+        </div>
+        <div class="b-stat">
+          <div class="b-stat-num">2,740</div>
+          <div class="b-stat-label">活跃开发者</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category filter tabs -->
+    <div class="cat-row" id="catRow">
+      <div class="cat-btn active">全部</div>
+      <div class="cat-btn">研发</div>
+      <div class="cat-btn">协同办公</div>
+      <div class="cat-btn">采销营销</div>
+      <div class="cat-btn">HR</div>
+      <div class="cat-btn">商分</div>
+      <div class="cat-btn">产品</div>
+      <div class="cat-btn">小财神</div>
+      <div class="cat-btn">客服</div>
+      <div class="cat-btn">内容创作</div>
+      <div class="cat-btn">资讯搜索</div>
+      <div class="cat-btn">IT运维</div>
+      <div class="cat-btn">金融服务</div>
+      <div class="cat-btn">资管</div>
+      <div class="cat-btn">销售(B端)</div>
+      <div class="cat-btn">工业</div>
+      <div class="cat-btn">安全</div>
+      <div class="cat-btn">Overseas</div>
+      <div class="cat-btn">教育</div>
+    </div>
+
+    <!-- Main two-column -->
+    <div class="main-cols">
+      <div class="main-left">
+
+        <!-- 官方精选 -->
+        <div class="section-header">
+          <span class="section-title">官方精选</span>
+          <a href="#" class="section-more">查看全部 <i class="fas fa-chevron-right" style="font-size:10px"></i></a>
+        </div>
+        <div class="skill-grid">
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#ebf3ff">📊</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">Excel表格处理</span>
+                <span class="badge-official">✓ 官方</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">J</div>joyClaw官方</div>
+              <div class="skill-desc">全面的电子表格处理工具，支持公式、格式、数据分析和可视化，用于Excel文件的创建、编辑和分析。</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 5.5k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.7</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 4</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#f0fdf4">🔍</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">自主寻找skills</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">田</div>田芳妮(Sameen)</div>
+              <div class="skill-desc">当遇到当前技能无法解决的问题时，自动识别用户需求、搜索技能市场、学习新技能详情并应用实践。</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 4.8k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.4</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 2</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#fff7ed">📈</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">数据分析可视化</span>
+                <span class="badge-official">✓ 官方</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">J</div>joyClaw官方</div>
+              <div class="skill-desc">数据分析和可视化工具，查询数据库、生成报告、自动化电子表格，将原始数据转化为清晰可执行的洞察。</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 3.3k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.2</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 1</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#faf5ff">🤖</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">自我进化代理</span>
+                <span class="badge-official">✓ 官方</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">J</div>joyClaw官方</div>
+              <div class="skill-desc">通过自我进化代理，从所有技能经验中持续学习，采用多记忆架构（语义记忆+情景记忆+工作记忆），自动触发技能完成后。</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 2.8k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.1</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 2</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#ecfdf5">🌐</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">网页爬虫工具</span>
+                <span class="badge-official">✓ 官方</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">J</div>joyClaw官方</div>
+              <div class="skill-desc">使用Scrapling进行网页抓取，支持反爬虫绕过、隐形无头浏览、爬虫框架、自适应抓取和JavaScript渲染。</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 2.3k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.2</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 1</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#fffbeb">📝</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">工作周报小助手</span>
+                <span class="badge-new">New</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">姜</div>姜美红</div>
+              <div class="skill-desc">按照用户个人固定格式生成汇报型工作周报（含"待决策事项/本周重点工作/下周重点工作/关键数字"四段式结构，带风险提示。</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 2.2k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.2</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 1</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 社区热门 -->
+        <div class="section-header">
+          <span class="section-title">社区热门</span>
+          <a href="#" class="section-more">查看全部 <i class="fas fa-chevron-right" style="font-size:10px"></i></a>
+        </div>
+        <div class="skill-grid">
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#eff6ff">🖥️</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">JoyClaw浏览器自动化</span>
+                <span class="badge-hot">热门</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">茹</div>茹俊植(Julian)</div>
+              <div class="skill-desc">Windows用户可以使用此技能解决之前浏览器打不开的问题，Win/Mac用户可以减少浏览器自动化过程中的报错。</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 2k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.4</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 2</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#f0fdf4">💹</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">商分-零售业务数据</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">易</div>易康</div>
+              <div class="skill-desc">基于零售业务权限的AI分析技能，支持自然语言查询，提供捷查询、多维诊断、智能报告三类核心能力。覆盖：交易、...</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 1.7k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 2.6</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 1</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="skill-card">
+            <div class="skill-icon" style="background:#fff7ed">📰</div>
+            <div class="skill-info">
+              <div class="skill-name-row">
+                <span class="skill-name">AI每日新闻简报</span>
+                <span class="badge-official">✓ 官方</span>
+              </div>
+              <div class="skill-author"><div class="skill-author-av">J</div>joyClaw官方</div>
+              <div class="skill-desc">通用每日新闻报生成器，聚合用户指定主题（AI、金融、地缘政治、体育、科技、科学等）的最新新闻，从多个来源收集...</div>
+              <div class="skill-footer">
+                <span class="skill-meta"><i class="fas fa-download"></i> 1.6k</span>
+                <span class="skill-meta"><i class="fas fa-star"></i> 4.2</span>
+                <span class="skill-meta"><i class="fas fa-comment"></i> 1</span>
+                <button class="skill-install">安装</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="main-right">
+
+        <!-- 热门技能 -->
+        <div class="panel">
+          <div class="panel-title">热门技能</div>
+          <div class="rank-tabs" data-tabgroup="hot">
+            <div class="rank-tab active">日</div>
+            <div class="rank-tab">周</div>
+            <div class="rank-tab">月</div>
+          </div>
+          <div class="rank-item">
+            <div class="rank-num">🥇</div>
+            <div class="rank-icon">📊</div>
+            <div class="rank-name">Excel表格处理</div>
+            <div class="rank-count"><i class="fas fa-download"></i> 247</div>
+          </div>
+          <div class="rank-item">
+            <div class="rank-num">🥈</div>
+            <div class="rank-icon">📈</div>
+            <div class="rank-name">数据分析可视化</div>
+            <div class="rank-count"><i class="fas fa-download"></i> 186</div>
+          </div>
+          <div class="rank-item">
+            <div class="rank-num">🥉</div>
+            <div class="rank-icon">🔍</div>
+            <div class="rank-name">自主寻找skills</div>
+            <div class="rank-count"><i class="fas fa-download"></i> 162</div>
+          </div>
+          <div class="rank-item">
+            <div class="rank-num">4</div>
+            <div class="rank-icon">🤖</div>
+            <div class="rank-name">自我进化代理</div>
+            <div class="rank-count"><i class="fas fa-download"></i> 155</div>
+          </div>
+          <div class="rank-item">
+            <div class="rank-num">5</div>
+            <div class="rank-icon">🌐</div>
+            <div class="rank-name">网页爬虫工具</div>
+            <div class="rank-count"><i class="fas fa-download"></i> 141</div>
+          </div>
+        </div>
+
+        <!-- 活跃贡献者 -->
+        <div class="panel">
+          <div class="panel-title">活跃贡献者</div>
+          <div class="rank-tabs" data-tabgroup="contrib">
+            <div class="rank-tab active">日</div>
+            <div class="rank-tab">周</div>
+            <div class="rank-tab">月</div>
+          </div>
+          <div class="contributor-item">
+            <div class="contributor-av" style="background:#52525b">方</div>
+            <div class="contributor-info">
+              <div class="contributor-name">fangyang6</div>
+              <div class="contributor-sub">69个技能</div>
+            </div>
+            <div class="contributor-dl"><i class="fas fa-download"></i> 1142</div>
+          </div>
+          <div class="contributor-item">
+            <div class="contributor-av" style="background:#3d4a64">田</div>
+            <div class="contributor-info">
+              <div class="contributor-name">tianfangni</div>
+              <div class="contributor-sub">9个技能</div>
+            </div>
+            <div class="contributor-dl"><i class="fas fa-download"></i> 191</div>
+          </div>
+          <div class="contributor-item">
+            <div class="contributor-av" style="background:#6b7280">茹</div>
+            <div class="contributor-info">
+              <div class="contributor-name">rujunzhi.julian</div>
+              <div class="contributor-sub">10个技能</div>
+            </div>
+            <div class="contributor-dl"><i class="fas fa-download"></i> 138</div>
+          </div>
+          <div class="contributor-item">
+            <div class="contributor-av" style="background:#374151">贾</div>
+            <div class="contributor-info">
+              <div class="contributor-name">贾世霖</div>
+              <div class="contributor-sub">1个技能</div>
+            </div>
+            <div class="contributor-dl"><i class="fas fa-download"></i> 97</div>
+          </div>
+        </div>
+
+        <!-- 贡献你的技能 -->
+        <div class="contribute-card">
+          <div class="panel-title">贡献你的技能</div>
+          <div class="contribute-desc">创建你自己的 Skill 并发布到社区，帮助更多人提升工作效率。</div>
+          <a href="create.html" class="btn-primary" style="width:100%;justify-content:center">
+            <i class="fas fa-plus"></i> 创建技能
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="sidebar.js"></script>
+<script>SkillBuilderSidebar.render('gallery');</script>
+<script>
+  // Category tabs
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Rank/contrib tab groups
+  document.querySelectorAll('.rank-tabs').forEach(group => {
+    group.querySelectorAll('.rank-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        group.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+  });
+
+  // Skill card click → detail page (exclude install btn)
+  document.querySelectorAll('.skill-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.skill-install')) return;
+      window.location.href = 'skill-detail.html';
+    });
+  });
+</script>
+</body>
+</html>
