@@ -215,7 +215,7 @@
     .cw-record-hint:hover { color:#666; }
     .cw-record-hint b { color:#E11D48; font-weight:600; }
     .cw-record-hint i { color:#E11D48; font-size:11px; opacity:.7; transition:transform .15s; }
-    .cw-record-hint:hover i { transform:translateX(3px); opacity:1; }
+    .cw-record-hint:hover i { transform:translateX(-3px); opacity:1; }
     .cw-record-hint.hidden { display:none; }
 
     /* ── 录屏面板：返回文字描述链接 ── */
@@ -820,7 +820,7 @@
             </button>
             <!-- 录屏入口：底部轻量文字引导（填充中间空白） -->
             <button class="cw-record-hint" id="cwRecordHint">
-              不想打字？<b>录屏演示一遍</b>，AI 自动生成 <i class="fas fa-arrow-right"></i>
+              <i class="fas fa-arrow-left"></i> 不想打字？<b>录屏演示一遍</b>，AI 自动生成
             </button>
             <input type="file" id="cwLocalFile" style="display:none">
             <input type="file" id="cwZipFile" style="display:none" accept=".zip">
