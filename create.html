@@ -45,15 +45,44 @@
     .cw-hitem i { font-size:11px; color:#999; flex-shrink:0; }
     .cw-hitem span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-    /* 主编辑区 — 纯灰底，无点阵 */
+    /* 主编辑区 */
     .cw-main {
       flex:1; min-width:0; display:flex; flex-direction:column;
       align-items:center; padding-top:72px; overflow-y:auto;
       background:#f0f1f5;
+      position: relative;
     }
+    /* 点阵背景层：覆盖在 title + card 的高度区域，向上下淡出 */
+    .cw-main::before {
+      content: '';
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .cw-dot-bg {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: radial-gradient(circle, #b0b4c0 1.2px, transparent 1.2px);
+      background-size: 22px 22px;
+      background-color: transparent;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.85) 15%, rgba(0,0,0,.85) 70%, transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.85) 15%, rgba(0,0,0,.85) 70%, transparent 100%);
+    }
+    .cw-main > * { position: relative; z-index: 1; }
+    #cwDotBg { position: absolute !important; width: 100%; z-index: 0; }
     .cw-title {
-      font-size:34px; font-weight:800; color:#111; margin-bottom:36px;
-      letter-spacing:-.5px; text-align:center; line-height:1.25;
+      font-size:32px; font-weight:800; color:#111; margin-bottom:8px;
+      letter-spacing:-.5px; text-align:center; line-height:1.3;
+    }
+    .cw-subtitle {
+      font-size:15px; color:#888; margin-bottom:32px; text-align:center; font-weight:400;
     }
 
     /* ── 白卡容器（包住 tab + composer）── */
@@ -137,35 +166,16 @@
     /* ── 文字模式 ────────────────────────────────────────── */
     #textMode { width:100%; display:flex; flex-direction:column; align-items:stretch; }
 
-    /* 输入框 — 点阵背景 + 上下渐变蒙层 */
+    /* 输入框 — 透明背景，透出页面点阵 */
     .cw-composer {
       width: 100%;
       min-height:140px; max-height:320px;
       border: none; border-radius: 0;
       display:flex; flex-direction:column;
       overflow:hidden; position:relative; transition:max-height .2s;
-      /* 点阵背景 */
-      background-color: #fafafa;
-      background-image: radial-gradient(circle, #d4d7df 1px, transparent 1px);
-      background-size: 22px 22px;
+      background: transparent;
     }
     .cw-composer:focus-within { box-shadow: none; }
-    /* 上下渐变蒙层，让点阵向边缘淡出 */
-    .cw-composer::before,
-    .cw-composer::after {
-      content: '';
-      position: absolute; left: 0; right: 0; z-index: 1;
-      pointer-events: none;
-    }
-    .cw-composer::before {
-      top: 0; height: 52px;
-      background: linear-gradient(to bottom, #fafafa 0%, transparent 100%);
-    }
-    .cw-composer::after {
-      bottom: 0; height: 52px;
-      background: linear-gradient(to top, #fafafa 0%, transparent 100%);
-    }
-    /* textarea 和 hint 需要在蒙层之上 */
     .cw-tab-hint, .cw-textarea, .cw-opt-view { position: relative; z-index: 2; }
     .cw-bottom { position: relative; z-index: 2; background: #fff; }
     .cw-tab-hint {
@@ -686,20 +696,28 @@
 
     <!-- 主区域 -->
     <section class="cw-main" id="cwMain">
-      <h1 class="cw-title">扣子编程，你的 AI 开发伙伴已就位</h1>
+      <!-- 点阵背景层，高度由 JS 动态设置 -->
+      <div class="cw-dot-bg" id="cwDotBg"></div>
+
+      <h1 class="cw-title">你来描述，AI 自动构建</h1>
+      <p class="cw-subtitle">输入你的想法，30 秒生成可运行的技能、智能体与工作流</p>
 
       <!-- 白卡容器 -->
-      <div class="cw-card">
+      <div class="cw-card" id="cwCard">
 
         <!-- 类型切换 Tab -->
         <div class="cw-type-tabs" id="cwTypeTabs">
-          <button class="cw-type-tab" data-type="webapp">网页应用</button>
-          <button class="cw-type-tab" data-type="mobile">移动应用</button>
-          <button class="cw-type-tab" data-type="miniapp">小程序</button>
-          <button class="cw-type-tab" data-type="agent">智能体</button>
-          <button class="cw-type-tab" data-type="workflow">工作流</button>
           <button class="cw-type-tab active" data-type="skills">
             <i class="fas fa-sliders-h" style="font-size:11px"></i> 技能
+          </button>
+          <button class="cw-type-tab" data-type="agent">
+            <i class="fas fa-robot" style="font-size:11px"></i> 智能体
+          </button>
+          <button class="cw-type-tab" data-type="plugins">
+            <i class="fas fa-plug" style="font-size:11px"></i> 插件
+          </button>
+          <button class="cw-type-tab" data-type="connector">
+            <i class="fas fa-link" style="font-size:11px"></i> 连接器
           </button>
         </div>
 
@@ -936,20 +954,14 @@
         </div><!-- /cw-tab-content skills -->
 
         <!-- ── 其他 Tab 占位内容 ── -->
-        <div class="cw-tab-content" id="tabContentWebapp">
-          <div class="cw-placeholder"><i class="fas fa-globe"></i><span>网页应用创建功能即将上线</span></div>
-        </div>
-        <div class="cw-tab-content" id="tabContentMobile">
-          <div class="cw-placeholder"><i class="fas fa-mobile-alt"></i><span>移动应用创建功能即将上线</span></div>
-        </div>
-        <div class="cw-tab-content" id="tabContentMiniapp">
-          <div class="cw-placeholder"><i class="fas fa-qrcode"></i><span>小程序创建功能即将上线</span></div>
-        </div>
         <div class="cw-tab-content" id="tabContentAgent">
           <div class="cw-placeholder"><i class="fas fa-robot"></i><span>智能体创建功能即将上线</span></div>
         </div>
-        <div class="cw-tab-content" id="tabContentWorkflow">
-          <div class="cw-placeholder"><i class="fas fa-project-diagram"></i><span>工作流创建功能即将上线</span></div>
+        <div class="cw-tab-content" id="tabContentPlugins">
+          <div class="cw-placeholder"><i class="fas fa-plug"></i><span>插件管理功能即将上线</span></div>
+        </div>
+        <div class="cw-tab-content" id="tabContentConnector">
+          <div class="cw-placeholder"><i class="fas fa-link"></i><span>连接器配置功能即将上线</span></div>
         </div>
 
       </div><!-- /cw-card -->
@@ -1022,12 +1034,10 @@ document.querySelectorAll('.cw-hitem').forEach(item => {
 // 类型 Tab 切换
 // ══════════════════════════════════════════════════════════
 const TYPE_TAB_MAP = {
-  webapp: 'tabContentWebapp',
-  mobile: 'tabContentMobile',
-  miniapp: 'tabContentMiniapp',
-  agent:   'tabContentAgent',
-  workflow:'tabContentWorkflow',
-  skills:  'tabContentSkills',
+  skills:    'tabContentSkills',
+  agent:     'tabContentAgent',
+  plugins:   'tabContentPlugins',
+  connector: 'tabContentConnector',
 };
 document.querySelectorAll('.cw-type-tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -1063,6 +1073,28 @@ document.querySelectorAll('.cw-mode-tab').forEach(tab => {
   });
 });
 const cwMain = document.getElementById('cwMain');
+
+// ══════════════════════════════════════════════════════════
+// 点阵背景层：动态同步到 title + card 的高度范围
+// ══════════════════════════════════════════════════════════
+function syncDotBg() {
+  const dotBg = document.getElementById('cwDotBg');
+  const card  = document.getElementById('cwCard');
+  const title = document.querySelector('.cw-title');
+  const sub   = document.querySelector('.cw-subtitle');
+  if (!dotBg || !card || !title) return;
+  const mainRect  = cwMain.getBoundingClientRect();
+  const titleRect = title.getBoundingClientRect();
+  const cardRect  = card.getBoundingClientRect();
+  const top    = titleRect.top  - mainRect.top  + cwMain.scrollTop;
+  const bottom = cardRect.bottom - mainRect.top + cwMain.scrollTop;
+  dotBg.style.top    = (top - 24) + 'px';
+  dotBg.style.height = (bottom - top + 48) + 'px';
+}
+// 初始化 + 监听 card 大小变化
+window.addEventListener('load', syncDotBg);
+window.addEventListener('resize', syncDotBg);
+new ResizeObserver(syncDotBg).observe(document.getElementById('cwCard'));
 
 // ══════════════════════════════════════════════════════════
 // 文字模式：hint 轮播
