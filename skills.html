@@ -3,148 +3,51 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>我的技能 — Skill Builder</title>
+  <title>我的技能 — AI Builder</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <link rel="stylesheet" href="theme.css"/>
   <style>
-    .page-shell { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
-    .page-header {
-      height:52px; background:#fff; border-bottom:1px solid #EBEBEF;
-      display:flex; align-items:center; padding:0 24px; gap:12px; flex-shrink:0;
-    }
-    .page-title { font-size:16px; font-weight:700; color:#1A1A1E; }
-    .header-search {
-      display:flex; align-items:center; gap:8px;
-      background:#F5F6F8; border:1px solid #EBEBEF; border-radius:8px;
-      padding:7px 12px; width:220px; transition:border-color .15s;
-    }
-    .header-search:focus-within { border-color:#18181B; background:#fff; }
-    .header-search i { color:#9A9AAB; font-size:13px; }
-    .header-search input { border:none; outline:none; background:transparent; font-size:13px; color:#1A1A1E; flex:1; }
-    .header-search input::placeholder { color:#C0C5D0; }
-    .header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
-    .btn-primary {
-      padding:8px 16px; border-radius:8px; background:#18181B; color:#fff;
-      font-size:13px; font-weight:600; border:none; cursor:pointer; text-decoration:none;
-      display:inline-flex; align-items:center; gap:6px; transition:background .12s;
-    }
-    .btn-primary:hover { background:#3F3F46; }
-    .btn-ghost {
-      padding:8px 14px; border-radius:8px; background:#fff; color:#4F555F;
-      font-size:13px; font-weight:500; border:1px solid #EBEBEF; cursor:pointer;
-      display:inline-flex; align-items:center; gap:6px; transition:all .12s;
-    }
-    .btn-ghost:hover { background:#F5F6F8; }
-    .page-body { flex:1; overflow-y:auto; padding:20px 24px 24px; }
+    .content-toolbar { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+    .content-toolbar .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
 
-    /* 文件夹行 */
-    .folder-row { display:flex; align-items:center; gap:8px; padding:14px 0 12px; border-bottom:1px solid #EBEBEF; margin-bottom:16px; }
-    .folder-chip {
-      display:flex; align-items:center; gap:6px;
-      padding:5px 12px; border-radius:8px; background:#F5F6F8; border:1px solid #EBEBEF;
-      font-size:12px; color:#4F555F; cursor:pointer; transition:all .12s;
-    }
-    .folder-chip.active { background:#18181B; border-color:#18181B; color:#fff; font-weight:600; }
-    .folder-chip:hover:not(.active) { border-color:#A1A1AA; color:#18181B; }
-    .folder-chip i { font-size:11px; }
-    .folder-add { width:30px; height:30px; border-radius:8px; border:1px dashed #D4D4D8; background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#A1A1AA; font-size:12px; }
-    .folder-add:hover { border-color:#18181B; color:#18181B; }
-
-    /* 筛选栏 */
-    .filter-row { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
-    .filter-tabs { display:flex; gap:0; border-bottom:2px solid #EBEBEF; }
-    .filter-tab {
-      padding:6px 16px 8px; font-size:13px; font-weight:500; color:#9A9AAB;
-      cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;
-      transition:all .12s; white-space:nowrap;
-    }
-    .filter-tab:hover { color:#1A1A1E; }
-    .filter-tab.active { color:#18181B; font-weight:700; border-bottom-color:#18181B; }
-    .filter-count { font-size:10px; background:#F5F6F8; color:#6B6B80; padding:1px 6px; border-radius:9999px; margin-left:4px; }
+    .filter-row { display:flex; align-items:center; gap:8px; margin-bottom:18px; }
     .sort-select {
-      margin-left:auto; padding:6px 10px; border-radius:8px; border:1px solid #EBEBEF; background:#fff;
-      font-size:13px; color:#4F555F; cursor:pointer; outline:none;
+      margin-left:auto; padding:7px 12px; border-radius:var(--r-md); border:1px solid var(--c-border);
+      background:var(--c-surface); font-size:13px; color:var(--c-text-sub); cursor:pointer; outline:none;
     }
 
-    /* 技能卡片 Grid —— 对齐第一张截图 */
+    /* 技能卡片 Grid */
     .skills-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
-    .sk-card {
-      background:#fff; border:1px solid #EBEBEF; border-radius:12px;
-      display:flex; flex-direction:column; padding:16px;
-      cursor:pointer; transition:box-shadow .15s, border-color .15s;
-    }
-    .sk-card:hover { border-color:#18181B; box-shadow:0 2px 12px rgba(0,0,0,.07); }
-    .sk-top { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
-    .sk-icon {
-      width:44px; height:44px; border-radius:10px; flex-shrink:0;
-      display:flex; align-items:center; justify-content:center; font-size:20px;
-      background:#F5F6F8; overflow:hidden;
-    }
-    .sk-icon img { width:100%; height:100%; object-fit:cover; }
+    .sk-card { display:flex; flex-direction:column; padding:16px; cursor:pointer; }
+    .sk-top { display:flex; align-items:flex-start; gap:11px; margin-bottom:9px; }
     .sk-meta { flex:1; min-width:0; }
-    .sk-name { font-size:13px; font-weight:700; color:#1A1A1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
-    .sk-platform { display:inline-block; font-size:10px; color:#52525B; background:#F4F4F5; border-radius:4px; padding:1px 6px; font-weight:600; }
+    .sk-name { font-size:13.5px; font-weight:700; color:var(--c-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; letter-spacing:-.2px; }
     .sk-status-row { display:flex; align-items:center; gap:6px; margin-top:5px; }
-    .sk-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-    .sk-dot.published { background:#16A34A; }
-    .sk-dot.draft { background:#9A9AAB; }
-    .sk-dot.review { background:#F59E0B; }
-    .sk-dot.failed { background:#DC2626; }
-    .sk-status-text { font-size:11px; color:#6B6B80; }
-    .sk-ver { font-size:11px; color:#9A9AAB; margin-left:2px; }
+    .sk-status-text { font-size:11px; color:var(--c-text-sub); }
+    .sk-ver { font-size:11px; color:var(--c-text-mute); margin-left:1px; }
     .sk-desc {
-      font-size:12px; color:#6B6B80; line-height:1.6;
+      font-size:12px; color:var(--c-text-sub); line-height:1.6;
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
       margin-bottom:12px; flex:1;
     }
     .sk-actions { display:flex; gap:8px; }
     .sk-btn {
-      flex:1; padding:6px 0; border-radius:7px; font-size:12px; font-weight:600;
-      cursor:pointer; text-align:center; border:1px solid #EBEBEF; background:#fff; color:#4F555F;
-      transition:all .12s;
+      flex:1; padding:7px 0; border-radius:var(--r-sm); font-size:12px; font-weight:600;
+      cursor:pointer; text-align:center; border:1px solid var(--c-border); background:var(--c-surface);
+      color:var(--c-text-sub); transition:var(--t-step);
     }
-    .sk-btn:hover { background:#F5F6F8; }
-    .sk-btn.danger { color:#DC2626; border-color:#FECACA; }
-    .sk-btn.danger:hover { background:#FEF2F2; }
-    .sk-btn.primary { background:#18181B; color:#fff; border-color:#18181B; }
-    .sk-btn.primary:hover { background:#3F3F46; }
+    .sk-btn:hover { background:var(--c-hover); color:var(--c-text); }
+    .sk-btn.danger { color:var(--c-danger); border-color:var(--c-danger-line); }
+    .sk-btn.danger:hover { background:var(--c-danger-soft); }
+    .sk-btn.primary { background:var(--c-ink); color:#fff; border-color:var(--c-ink); }
+    .sk-btn.primary:hover { opacity:.86; }
 
-    /* 空状态 */
     .empty-state {
       grid-column:1/-1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-      padding:60px 24px; color:#9A9AAB; text-align:center;
+      padding:60px 24px; color:var(--c-text-mute); text-align:center;
     }
-    .empty-state i { font-size:40px; margin-bottom:14px; color:#D0D4E0; }
+    .empty-state i { font-size:40px; margin-bottom:14px; color:var(--c-text-faint); }
     .empty-state p { font-size:14px; margin-bottom:16px; }
-
-    /* ── Page toolbar ── */
-    .page-toolbar {
-      display:flex; align-items:center; gap:10px;
-      padding:0 24px; height:48px; background:#fff;
-      border-bottom:1px solid #eceef2; flex-shrink:0;
-    }
-    .toolbar-search {
-      display:flex; align-items:center; gap:8px;
-      background:#f5f6fa; border:1px solid #eceef2; border-radius:8px;
-      padding:6px 12px; width:240px; transition:border-color .15s;
-    }
-    .toolbar-search:focus-within { border-color:#bbb; background:#fff; }
-    .toolbar-search i { color:#999; font-size:13px; }
-    .toolbar-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
-    .toolbar-search input::placeholder { color:#999; }
-    .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
-    .content-toolbar {
-      display:flex; align-items:center; gap:10px; margin-bottom:20px;
-    }
-    .content-toolbar .toolbar-search {
-      display:flex; align-items:center; gap:8px;
-      background:#fff; border:1px solid #eceef2; border-radius:8px;
-      padding:7px 12px; width:240px; transition:border-color .15s;
-    }
-    .content-toolbar .toolbar-search:focus-within { border-color:#bbb; }
-    .content-toolbar .toolbar-search i { color:#999; font-size:13px; }
-    .content-toolbar .toolbar-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
-    .content-toolbar .toolbar-search input::placeholder { color:#999; }
-    .content-toolbar .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
   </style>
 </head>
 <body>
@@ -155,25 +58,24 @@
 
   <div class="page-body">
     <div class="content-toolbar">
-      <div class="toolbar-search">
-      <i class="fas fa-search"></i>
-      <input type="text" placeholder="搜索我的技能..."/>
-    </div>
+      <div class="ui-search">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="搜索我的技能..."/>
+      </div>
       <div class="toolbar-end">
-      <button class="btn-ghost"><i class="fas fa-file-import"></i> 导入技能</button>
-      <a href="create.html" class="btn-primary"><i class="fas fa-plus"></i> 新建技能</a>
+        <button class="btn-ghost"><i class="fas fa-file-import"></i> 导入技能</button>
+        <a href="create.html" class="btn-primary"><i class="fas fa-plus"></i> 新建技能</a>
+      </div>
     </div>
-    </div>
-    <!-- 文件夹 -->
 
     <!-- 筛选 & 排序 -->
     <div class="filter-row">
-      <div class="filter-tabs">
-        <div class="filter-tab active">全部 <span class="filter-count">14</span></div>
-        <div class="filter-tab">已上架 <span class="filter-count">10</span></div>
-        <div class="filter-tab">草稿 <span class="filter-count">2</span></div>
-        <div class="filter-tab">审核中 <span class="filter-count">1</span></div>
-        <div class="filter-tab">已下架 <span class="filter-count">1</span></div>
+      <div class="ui-filter-tabs">
+        <div class="ui-filter-tab active">全部 <span class="ui-filter-count">14</span></div>
+        <div class="ui-filter-tab">已上架 <span class="ui-filter-count">10</span></div>
+        <div class="ui-filter-tab">草稿 <span class="ui-filter-count">2</span></div>
+        <div class="ui-filter-tab">审核中 <span class="ui-filter-count">1</span></div>
+        <div class="ui-filter-tab">已下架 <span class="ui-filter-count">1</span></div>
       </div>
       <select class="sort-select">
         <option>最近修改</option>
@@ -186,13 +88,13 @@
     <!-- 卡片网格 -->
     <div class="skills-grid">
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">📋</div>
+          <div class="ui-glyph sz-44 tint-indigo"><i class="fas fa-clipboard-list"></i></div>
           <div class="sk-meta">
             <div class="sk-name">会议纪要整理专家</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">将杂乱的会议记录转换为结构清晰、包含行动项（Action Items）的标准会议纪要，适用于团队周会、项目复盘、...</div>
@@ -202,13 +104,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">📊</div>
+          <div class="ui-glyph sz-44 tint-blue"><i class="fas fa-chart-bar"></i></div>
           <div class="sk-meta">
             <div class="sk-name">ppt生成器</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">根据提供的文本素材生成结构化PowerPoint演示文稿，支持多种页面布局，智能规划内容结构并输出.pptx文件</div>
@@ -218,13 +120,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">📈</div>
+          <div class="ui-glyph sz-44 tint-green"><i class="fas fa-chart-line"></i></div>
           <div class="sk-meta">
             <div class="sk-name">动态柱状图制作</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">根据用户上传的CSV数据生成3D动态柱状图可视化HTML文件；适用于展示随时间变化的排名数据、历史趋势分...</div>
@@ -234,13 +136,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">🎯</div>
+          <div class="ui-glyph sz-44 tint-rose"><i class="fas fa-bullseye"></i></div>
           <div class="sk-meta">
             <div class="sk-name">贾世霖的SKILL</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot failed"></span><span class="sk-status-text">审核失败</span><span class="sk-ver">v1</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot failed"></span><span class="sk-status-text">审核失败</span><span class="sk-ver">v1</span></div>
           </div>
         </div>
         <div class="sk-desc">SKILL描述</div>
@@ -251,13 +153,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">💰</div>
+          <div class="ui-glyph sz-44 tint-amber"><i class="fas fa-coins"></i></div>
           <div class="sk-meta">
             <div class="sk-name">薪酬结构合规性审计</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">薪酬合规性审计与个税校验工具，检查社保基数匹配度、个税累计预扣准确性、加班费法定标准、最低工资合规...</div>
@@ -267,13 +169,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">📉</div>
+          <div class="ui-glyph sz-44 tint-violet"><i class="fas fa-chart-area"></i></div>
           <div class="sk-meta">
             <div class="sk-name">绩效考核校准</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">绩效数据校准与分布分析助手，支持强制分布校验、评分偏差检测、9-Box矩阵生成、奖金测算</div>
@@ -283,13 +185,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">📜</div>
+          <div class="ui-glyph sz-44 tint-amber"><i class="fas fa-scroll"></i></div>
           <div class="sk-meta">
             <div class="sk-name">劳动合同全生命周期合...</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">劳动合同全生命周期合规监控：到期预警（30/60天）、试用期合规、无固定期限条件核查、条款风险审查、生成...</div>
@@ -299,13 +201,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">⏰</div>
+          <div class="ui-glyph sz-44 tint-blue"><i class="fas fa-clock"></i></div>
           <div class="sk-meta">
             <div class="sk-name">智能考勤异常检测</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">分析考打卡数据识别异常模式，关联请假核验，计算假期余额并预警，生成部门出勤报表和处理建议</div>
@@ -315,13 +217,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">📄</div>
+          <div class="ui-glyph sz-44 tint-indigo"><i class="fas fa-file-contract"></i></div>
           <div class="sk-meta">
             <div class="sk-name">雇佣合同模板</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">遵循法律最佳实践创建劳动合同、发offer通知书和人力资源政策文档。在起草雇佣协议、创建人力资源政策或标准...</div>
@@ -331,13 +233,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">💹</div>
+          <div class="ui-glyph sz-44 tint-green"><i class="fas fa-file-invoice-dollar"></i></div>
           <div class="sk-meta">
             <div class="sk-name">财务报表勾稽关系校验</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">自动校验财务报表勾稽关系，支持资负表、利润表、现金流量表、所有者权益变动表的多表联查；识别不平...</div>
@@ -347,13 +249,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">⚡</div>
+          <div class="ui-glyph sz-44 tint-violet"><i class="fas fa-bolt"></i></div>
           <div class="sk-meta">
             <div class="sk-name">brainstorming1111</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v3</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v3</span></div>
           </div>
         </div>
         <div class="sk-desc">SKILL描述</div>
@@ -363,13 +265,13 @@
         </div>
       </div>
 
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon">🔍</div>
+          <div class="ui-glyph sz-44 tint-blue"><i class="fas fa-search"></i></div>
           <div class="sk-meta">
             <div class="sk-name">审计底稿生成</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
           </div>
         </div>
         <div class="sk-desc">根据行业特征和审计阶段自动生成标准化审计底稿框架，支持制造业/服务业/金融三大行业，涵盖风险控制/...</div>
@@ -380,13 +282,13 @@
       </div>
 
       <!-- 草稿 -->
-      <div class="sk-card" style="border-style:dashed;border-color:#D0D4E0">
+      <div class="ui-card sk-card" style="border-style:dashed;border-color:var(--c-border-mid)">
         <div class="sk-top">
-          <div class="sk-icon" style="background:#FEF3C7">📝</div>
+          <div class="ui-glyph sz-44 tint-amber"><i class="fas fa-edit"></i></div>
           <div class="sk-meta">
             <div class="sk-name">合同风险扫描（草稿）</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot draft"></span><span class="sk-status-text">草稿</span><span class="sk-ver">v1</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot draft"></span><span class="sk-status-text">草稿</span><span class="sk-ver">v1</span></div>
           </div>
         </div>
         <div class="sk-desc">自动识别合同中的高风险条款、模糊表述和法律漏洞，输出风险评级报告与修改建议...</div>
@@ -398,13 +300,13 @@
       </div>
 
       <!-- 审核中 -->
-      <div class="sk-card">
+      <div class="ui-card sk-card">
         <div class="sk-top">
-          <div class="sk-icon" style="background:#FEF3C7">🔎</div>
+          <div class="ui-glyph sz-44 tint-amber"><i class="fas fa-search-plus"></i></div>
           <div class="sk-meta">
             <div class="sk-name">采购合同风险扫描</div>
-            <span class="sk-platform">Skill Builder平台</span>
-            <div class="sk-status-row"><span class="sk-dot review"></span><span class="sk-status-text">审核中</span><span class="sk-ver">v1</span></div>
+            <span class="ui-badge">AI Builder 平台</span>
+            <div class="sk-status-row"><span class="ui-dot review"></span><span class="sk-status-text">审核中</span><span class="sk-ver">v1</span></div>
           </div>
         </div>
         <div class="sk-desc">识别采购合同中的风险条款，标记偏差，生成采购风险报告</div>

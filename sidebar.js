@@ -48,12 +48,13 @@
       background: #f5f6fa;
     }
     :root {
-      --border: #eceef2;
+      --border: #EBECF0;
       --surface: #fff;
-      --bg: #f5f6fa;
-      --text-main: #111;
-      --text-sub: #555;
-      --text-muted: #999;
+      --bg: #F6F7F9;
+      --hover: #F2F3F6;
+      --text-main: #1A1A1E;
+      --text-sub: #555A63;
+      --text-muted: #9499A3;
       --radius: 8px;
     }
     #sb-sidebar {
@@ -76,17 +77,23 @@
       flex-shrink: 0;
     }
     .sb-logo-icon {
-      width: 26px; height: 26px;
-      border-radius: 7px;
-      background: #111;
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1B1B22 0%, #3A3A48 100%);
       display: flex; align-items: center; justify-content: center;
       font-size: 11px; color: #fff; font-weight: 800;
       flex-shrink: 0;
       letter-spacing: -0.5px;
+      box-shadow: 0 1px 2px rgba(16,16,20,.18);
     }
     .sb-logo-text {
       font-size: 14px; font-weight: 700; color: var(--text-main);
       white-space: nowrap; letter-spacing: -0.3px;
+    }
+    .sb-logo-tag {
+      font-size: 9px; font-weight: 700; color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 1px 5px; letter-spacing: .3px;
     }
     .sb-divider { height: 1px; background: var(--border); margin: 4px 0; }
     .sb-group { padding: 2px 8px; }
@@ -197,6 +204,7 @@
       <div class="sb-logo">
         <div class="sb-logo-icon">AI</div>
         <span class="sb-logo-text">AI Builder</span>
+        <span class="sb-logo-tag">内部</span>
       </div>
       <a class="sb-nav-item ${activeKey === 'create' ? 'active' : ''}" href="create.html" style="margin:4px 8px 2px;border-radius:8px;background:#111;color:#fff;font-weight:600;">
         <i class="sb-icon fas fa-plus" style="color:#fff"></i>

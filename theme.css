@@ -1,0 +1,158 @@
+/* ===================================================================
+   AI Builder · 统一设计系统 (Design Tokens)
+   风格：黑白灰为主 + 克制的彩色/渐变点缀
+   参考 JoyAgent 工具广场页，全站页面统一引用本文件
+   用法：<link rel="stylesheet" href="theme.css"/>
+   =================================================================== */
+
+:root {
+  /* —— 中性色阶（黑白灰主体）—— */
+  --c-ink:        #0F0F12;   /* 最深，主标题/主按钮底 */
+  --c-text:       #1A1A1E;   /* 正文主色 */
+  --c-text-sub:   #555A63;   /* 次级文字 */
+  --c-text-mute:  #9499A3;   /* 辅助/占位 */
+  --c-text-faint: #BFC4CD;   /* 极弱（分组标签等） */
+
+  --c-surface:    #FFFFFF;   /* 卡片/面板底 */
+  --c-bg:         #F6F7F9;   /* 页面底 */
+  --c-bg-sunken:  #F0F1F4;   /* 凹陷区域 */
+  --c-hover:      #F2F3F6;   /* hover 底色 */
+  --c-border:     #EBECF0;   /* 默认描边 */
+  --c-border-mid: #DEE0E6;   /* 略重描边 */
+
+  /* —— 点缀色（克制使用：图标底、状态、徽章）—— */
+  --c-accent:       #4F46E5;  /* 主点缀 靛蓝 */
+  --c-accent-soft:  #EEF0FF;  /* 主点缀浅底 */
+  --c-success:      #16A34A;
+  --c-warning:      #F59E0B;
+  --c-danger:       #DC2626;
+  --c-danger-soft:  #FEF2F2;
+  --c-danger-line:  #FECACA;
+
+  /* —— 渐变（仅用于 banner / 重点 CTA / 少量图标）—— */
+  --grad-ink:   linear-gradient(135deg, #1B1B22 0%, #2C2C38 100%);
+  --grad-brand: linear-gradient(135deg, #4F46E5 0%, #7C6FF0 100%);
+  --grad-night: linear-gradient(135deg, #0B1A3A 0%, #16386E 55%, #1D5299 100%);
+
+  /* —— 圆角 —— */
+  --r-sm: 7px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-pill: 9999px;
+
+  /* —— 阴影 —— */
+  --sh-sm: 0 1px 2px rgba(16,16,20,.04);
+  --sh-md: 0 2px 12px rgba(16,16,20,.07);
+  --sh-lg: 0 8px 28px rgba(16,16,20,.10);
+
+  /* —— 字体 —— */
+  --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", "Segoe UI", sans-serif;
+
+  --t-step: all .14s ease;
+}
+
+/* ===================== 基础重置 ===================== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--c-text);
+  background: var(--c-bg);
+}
+
+/* ===================== 通用页面骨架 ===================== */
+.page-shell { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; background:var(--c-bg); }
+.page-header {
+  height:52px; background:var(--c-surface); border-bottom:1px solid var(--c-border);
+  display:flex; align-items:center; padding:0 24px; gap:14px; flex-shrink:0;
+}
+.page-title { font-size:15px; font-weight:700; color:var(--c-text); letter-spacing:-.2px; }
+.page-body { flex:1; overflow-y:auto; padding:24px; }
+
+/* ===================== 按钮 ===================== */
+.btn-primary {
+  padding:8px 16px; border-radius:var(--r-pill); background:var(--c-ink); color:#fff;
+  font-size:13px; font-weight:600; border:none; cursor:pointer; text-decoration:none;
+  display:inline-flex; align-items:center; gap:6px; transition:var(--t-step);
+}
+.btn-primary:hover { opacity:.86; }
+.btn-ghost {
+  padding:8px 14px; border-radius:var(--r-pill); background:var(--c-surface); color:var(--c-text-sub);
+  font-size:13px; font-weight:500; border:1px solid var(--c-border); cursor:pointer; text-decoration:none;
+  display:inline-flex; align-items:center; gap:6px; transition:var(--t-step);
+}
+.btn-ghost:hover { border-color:var(--c-border-mid); color:var(--c-text); background:var(--c-hover); }
+
+/* ===================== 搜索框 ===================== */
+.ui-search {
+  display:flex; align-items:center; gap:8px;
+  background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-md);
+  padding:7px 12px; width:240px; transition:var(--t-step);
+}
+.ui-search:focus-within { border-color:var(--c-border-mid); box-shadow:var(--sh-sm); }
+.ui-search i { color:var(--c-text-mute); font-size:13px; }
+.ui-search input { border:none; outline:none; background:transparent; font-size:13px; color:var(--c-text); flex:1; }
+.ui-search input::placeholder { color:var(--c-text-mute); }
+
+/* ===================== 卡片 ===================== */
+.ui-card {
+  background:var(--c-surface); border:1px solid var(--c-border); border-radius:var(--r-lg);
+  transition:var(--t-step);
+}
+.ui-card:hover { border-color:var(--c-border-mid); box-shadow:var(--sh-md); }
+
+/* ===================== 统一图标方块（克制点缀核心）===================== */
+/* 默认中性底；通过 .tint-* 赋予柔和彩色，体现简约而非花哨 */
+.ui-glyph {
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:var(--r-md); flex-shrink:0;
+  background:var(--c-bg-sunken); color:var(--c-text); overflow:hidden;
+}
+.ui-glyph img { width:100%; height:100%; object-fit:cover; }
+.ui-glyph.sz-44 { width:44px; height:44px; font-size:20px; }
+.ui-glyph.sz-36 { width:36px; height:36px; font-size:16px; }
+.ui-glyph.sz-28 { width:28px; height:28px; font-size:13px; border-radius:var(--r-sm); }
+
+/* 柔和点缀色（图标底） */
+.tint-indigo { background:#EEF0FF; color:#4F46E5; }
+.tint-violet { background:#F3EEFF; color:#7C3AED; }
+.tint-blue   { background:#E8F1FF; color:#2563EB; }
+.tint-green  { background:#E7F7EE; color:#16A34A; }
+.tint-amber  { background:#FEF3C7; color:#B45309; }
+.tint-rose   { background:#FFEAEC; color:#E11D48; }
+.tint-ink    { background:var(--c-ink); color:#fff; }
+
+/* ===================== 状态点 ===================== */
+.ui-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; display:inline-block; }
+.ui-dot.published { background:var(--c-success); }
+.ui-dot.draft     { background:var(--c-text-mute); }
+.ui-dot.review    { background:var(--c-warning); }
+.ui-dot.failed    { background:var(--c-danger); }
+
+/* ===================== 徽章 / 标签 ===================== */
+.ui-badge {
+  font-size:10px; font-weight:600; color:var(--c-text-sub);
+  background:var(--c-bg-sunken); border-radius:var(--r-pill); padding:2px 8px;
+}
+.ui-badge.accent { background:var(--c-accent-soft); color:var(--c-accent); }
+.ui-tag {
+  font-size:10px; color:var(--c-text-sub); background:var(--c-bg-sunken);
+  border:1px solid var(--c-border); border-radius:var(--r-sm); padding:2px 7px; white-space:nowrap;
+}
+
+/* ===================== 筛选 Tab ===================== */
+.ui-filter-tabs { display:flex; border-bottom:2px solid var(--c-border); }
+.ui-filter-tab {
+  padding:6px 16px 8px; font-size:13px; font-weight:500; color:var(--c-text-mute);
+  cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:var(--t-step); white-space:nowrap;
+}
+.ui-filter-tab:hover { color:var(--c-text); }
+.ui-filter-tab.active { color:var(--c-ink); font-weight:700; border-bottom-color:var(--c-ink); }
+.ui-filter-count { font-size:10px; background:var(--c-bg-sunken); color:var(--c-text-sub); padding:1px 6px; border-radius:var(--r-pill); margin-left:4px; }
+
+/* ===================== 滚动条（细化）===================== */
+.page-body::-webkit-scrollbar { width:8px; }
+.page-body::-webkit-scrollbar-thumb { background:#D9DBE1; border-radius:9999px; }
+.page-body::-webkit-scrollbar-track { background:transparent; }
