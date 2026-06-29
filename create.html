@@ -311,6 +311,17 @@
     .cw-dropdown-item:hover { background:#f5f6fa; }
     .cw-dropdown-item i { width:14px; text-align:center; color:#999; font-size:12px; }
     .cw-right-btns { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    /* 专家：已添加技能标签 */
+    .cw-skill-chips { display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 4px; }
+    .cw-skill-chips:empty { display:none; }
+    .cw-skill-chip {
+      display:inline-flex; align-items:center; gap:6px;
+      background:#eef0ff; color:#4F46E5; border:1px solid #dfe3ff;
+      border-radius:8px; padding:4px 8px; font-size:12px; font-weight:600;
+    }
+    .cw-skill-chip i.chip-ic { font-size:10px; }
+    .cw-skill-chip .chip-x { cursor:pointer; color:#9aa1c8; font-size:11px; margin-left:1px; }
+    .cw-skill-chip .chip-x:hover { color:#4F46E5; }
     .cw-auto-btn {
       display:flex; align-items:center; gap:5px;
       padding:6px 12px; border-radius:20px; border:1px solid #eceef2;
@@ -1077,6 +1088,8 @@
                 <div id="exOptAfter"></div>
               </div>
             </div>
+            <!-- 已添加技能标签 -->
+            <div class="cw-skill-chips" id="exSkillChips"></div>
             <div class="cw-bottom">
               <div class="cw-add-wrap">
                 <button class="cw-icon-btn" id="exAddBtn"><i class="fas fa-plus"></i></button>
@@ -1089,6 +1102,14 @@
                 </div>
               </div>
               <button class="cw-icon-btn" id="exZipBtn" title="上传专家配置包"><i class="fas fa-file-archive"></i></button>
+              <!-- 添加 skill -->
+              <div class="cw-add-wrap">
+                <button class="cw-icon-btn" id="exSkillBtn" title="添加技能"><i class="fas fa-puzzle-piece"></i></button>
+                <div class="cw-dropdown" id="exSkillDropdown">
+                  <div class="cw-dropdown-item" id="exSkillFromHub"><i class="fas fa-compass"></i> 从 Skill Hub 添加</div>
+                  <div class="cw-dropdown-item" id="exSkillFromMine"><i class="fas fa-sliders-h"></i> 从我的 Skill 添加</div>
+                </div>
+              </div>
               <input type="file" id="exLocalFile" style="display:none">
               <div class="cw-right-btns">
                 <div class="cw-opt-actions hidden" id="exOptActions">
@@ -1580,7 +1601,12 @@ kbSearch.addEventListener('input',()=>{
     exStopStream(); exComposer.classList.remove('optimized');
     exOptActions.classList.add('hidden'); exSyncUI();
   });
-  exSend.addEventListener('click',()=>{ if(exTa.value.trim()) window.location.href='expert-editor.html'; });
+  exSend.addEventListener('click',()=>{
+    if(!exTa.value.trim()) return;
+    let url='expert-editor.html';
+    if(exAddedSkills.length) url+='?skills='+encodeURIComponent(exAddedSkills.join(','));
+    window.location.href=url;
+  });
 
   // 加号下拉（fixed 定位，复用知识库弹窗）
   const exAddBtn=document.getElementById('exAddBtn');
@@ -1606,6 +1632,91 @@ kbSearch.addEventListener('input',()=>{
 
   // 上传配置包：复用技能的 ZIP 弹窗
   document.getElementById('exZipBtn').addEventListener('click',()=>openZip());
+
+  // ══════════════════════════════════════════════════════════
+  // 添加 skill：从 Skill Hub / 我的 Skill 选择，输入框内插入技能标签
+  // ══════════════════════════════════════════════════════════
+  const HUB_SKILLS=[
+    {name:'数据分析可视化',meta:'@JoyClaw官方 · 被引用 3.3k',ic:'fa-chart-line',cls:'green'},
+    {name:'Excel 表格处理',meta:'@JoyClaw官方 · 被引用 5.5k',ic:'fa-table',cls:'blue'},
+    {name:'网页爬虫工具',meta:'@JoyClaw官方 · 被引用 2.3k',ic:'fa-spider',cls:'violet'},
+    {name:'PPT 生成器',meta:'@立夏欧 · 被引用 1.8k',ic:'fa-file-powerpoint',cls:'amber'},
+    {name:'自主寻找 skills',meta:'@田芳妮 · 被引用 4.8k',ic:'fa-magnifying-glass',cls:'indigo'},
+    {name:'AI 视频生成',meta:'@JoyClaw官方 · 被引用 1.2k',ic:'fa-clapperboard',cls:'rose'},
+  ];
+  const MY_SKILLS=[
+    {name:'会议纪要整理专家',meta:'我的技能 · v2',ic:'fa-clipboard-list',cls:'indigo'},
+    {name:'绩效考核校准',meta:'我的技能 · v2',ic:'fa-chart-area',cls:'violet'},
+    {name:'智能考勤异常检测',meta:'我的技能 · v2',ic:'fa-clock',cls:'blue'},
+    {name:'劳动合同全生命周期合规',meta:'我的技能 · v2',ic:'fa-scroll',cls:'amber'},
+    {name:'课程体系设计',meta:'我的技能 · v1',ic:'fa-sitemap',cls:'green'},
+  ];
+  // fa5 兼容
+  const FA5={'fa-magnifying-glass':'fa-search','fa-clapperboard':'fa-film','fa-spider':'fa-bug'};
+  const exChips=document.getElementById('exSkillChips');
+  const exAddedSkills=[];   // 已添加技能名
+
+  function exRenderChips(){
+    exChips.innerHTML=exAddedSkills.map((s,i)=>`
+      <span class="cw-skill-chip"><i class="fas fa-puzzle-piece chip-ic"></i>${s}<i class="fas fa-times chip-x" data-i="${i}"></i></span>
+    `).join('');
+    exChips.querySelectorAll('.chip-x').forEach(x=>x.addEventListener('click',()=>{
+      exAddedSkills.splice(+x.dataset.i,1); exRenderChips(); exSyncUI();
+    }));
+  }
+  function exAddSkill(name){
+    if(exAddedSkills.includes(name)) return;   // 去重
+    exAddedSkills.push(name); exRenderChips(); exSyncUI();
+  }
+  // 暴露给发送/优化逻辑，把技能拼进生成内容
+  window.__exAddedSkills = exAddedSkills;
+
+  // 复用 kbModal 作为 skill 选择器（隐藏空间行，单列）
+  function openSkillPicker(source){
+    const list = source==='hub' ? HUB_SKILLS : MY_SKILLS;
+    kbMode='skill';
+    kbModal.classList.remove('hidden');
+    kbBack.classList.remove('show');
+    kbSpaceRow.style.display='none';
+    kbTitle.innerHTML = source==='hub' ? '从 Skill Hub 添加技能' : '从我的 Skill 添加技能';
+    kbSearch.placeholder='搜索技能...'; kbSearch.value='';
+    const render=()=>{
+      const q=(kbSearch.value||'').trim().toLowerCase();
+      const rows=list.filter(s=>!q||s.name.toLowerCase().includes(q));
+      kbList.innerHTML = rows.length ? rows.map(s=>`
+        <div class="kb-item" data-name="${s.name}">
+          <div class="kb-item-ic ${s.cls}"><i class="fas ${FA5[s.ic]||s.ic}"></i></div>
+          <div class="kb-item-info"><div class="kb-item-name">${s.name}</div><div class="kb-item-meta">${s.meta}</div></div>
+          <i class="fas fa-plus kb-item-arrow"></i>
+        </div>`).join('') : '<div class="kb-empty">没有匹配的技能</div>';
+      kbList.querySelectorAll('.kb-item').forEach(el=>el.addEventListener('click',()=>{
+        exAddSkill(el.dataset.name);
+        kbModal.classList.add('hidden');
+        kbSearch.removeEventListener('input', render);
+      }));
+    };
+    kbSearch.removeEventListener('input', render);
+    kbSearch.addEventListener('input', render);
+    render();
+  }
+
+  // skill 添加按钮下拉
+  const exSkillBtn=document.getElementById('exSkillBtn');
+  const exSkillDd=document.getElementById('exSkillDropdown');
+  function exPositionSkillDd(){
+    const r=exSkillBtn.getBoundingClientRect();
+    exSkillDd.style.visibility='hidden'; exSkillDd.style.display='block';
+    const h=exSkillDd.offsetHeight,gap=8;
+    exSkillDd.style.display=''; exSkillDd.style.visibility='';
+    const above=r.top-gap-h;
+    exSkillDd.style.top=(above>=8?above:r.bottom+gap)+'px';
+    exSkillDd.style.left=r.left+'px';
+  }
+  exSkillBtn.addEventListener('click',e=>{ e.stopPropagation(); const willOpen=!exSkillDd.classList.contains('open'); if(willOpen) exPositionSkillDd(); exSkillDd.classList.toggle('open'); });
+  document.addEventListener('click',()=>exSkillDd.classList.remove('open'));
+  window.addEventListener('resize',()=>{ if(exSkillDd.classList.contains('open')) exPositionSkillDd(); });
+  document.getElementById('exSkillFromHub').addEventListener('click',()=>{ exSkillDd.classList.remove('open'); openSkillPicker('hub'); });
+  document.getElementById('exSkillFromMine').addEventListener('click',()=>{ exSkillDd.classList.remove('open'); openSkillPicker('mine'); });
 })();
 
 // ZIP

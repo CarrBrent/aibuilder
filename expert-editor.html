@@ -1745,8 +1745,20 @@
   }
 
   // 启动：先思考，思考第一步结束后弹出问题
+  // 来自创建页「添加 skill」的技能（?skills=a,b,c）
+  const ADDED_SKILLS = (new URLSearchParams(location.search).get('skills') || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+
   function startExpertFlow() {
-    streamThinking(() => startClarify());
+    streamThinking(() => {
+      // 思考结束后，若带入了技能，先在左栏反馈已纳入的技能
+      if (ADDED_SKILLS.length) {
+        leftAppend('<div class="think-divider"></div>');
+        leftAppend('<div class="think-head"><i class="fas fa-puzzle-piece"></i> 已纳入指定技能</div>');
+        ADDED_SKILLS.forEach(s => leftAppend(`<div class="think-line feedback"><span class="think-ic"><i class="fas fa-check"></i></span><span class="fb-a">${s}</span></div>`));
+      }
+      startClarify();
+    });
   }
 
   // ══ 澄清问题引擎 ═══════════════════════════════════════════
@@ -1871,6 +1883,7 @@
       <ul>
         ${(stages.length ? stages : ['培训需求诊断','课程体系规划','考核与效果评估']).map(s => `<li><strong>${s}</strong></li>`).join('')}
         <li>以<strong>${metric}</strong>为口径，自动追踪完成情况并预警未达标人员</li>
+        ${ADDED_SKILLS.map(s => `<li>已集成技能：<strong>${s}</strong></li>`).join('')}
       </ul>
       <h2>提问触发方式</h2>
       <p>当你有以下需求时，直接发消息即可触发：</p>
