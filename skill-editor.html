@@ -110,7 +110,7 @@
 
     /* ══ 左栏 ════════════════════════════════════════════════ */
     .left {
-      width: 340px; flex-shrink: 0;
+      flex: 2 1 0; min-width: 0;
       background: #fff;
       border-right: 1px solid #eceef3;
       display: flex; flex-direction: column;
@@ -240,14 +240,14 @@
 
     /* ══ 中栏 ════════════════════════════════════════════════ */
     .middle {
-      width: 0; flex-shrink: 0;
+      flex: 0 0 0; width: 0;
       display: flex; flex-direction: column;
       border-right: 0px solid #eceef3;
       overflow: hidden;
-      transition: width .2s ease, border-right-width .2s ease;
+      transition: flex-grow .2s ease, flex-basis .2s ease, border-right-width .2s ease;
     }
     .middle.fb-open {
-      width: 200px;
+      flex: 1 1 0; width: auto; min-width: 0;
       border-right-width: 1px;
     }
 
@@ -358,7 +358,7 @@
 
     /* ══ 右栏 ════════════════════════════════════════════════ */
     .right {
-      flex: 1; min-width: 480px;
+      flex: 3 1 0; min-width: 0;
       background: #fff;
       display: flex; flex-direction: column;
       overflow: hidden;
@@ -899,7 +899,7 @@
     </div><!-- close margin-left:auto wrapper -->
   </div>
   <!-- 中段：与中栏联动，默认收起 -->
-  <div class="tb-middle" id="tbMiddle">
+  <div class="tb-middle fb-open" id="tbMiddle">
     <!-- 展开后显示 Projects 标签 -->
     <span style="font-size:12px;font-weight:600;color:#9aa1af;white-space:nowrap">Projects</span>
   </div>
@@ -945,7 +945,7 @@
   </div>
 
   <!-- 中栏 -->
-  <div class="middle" id="middleCol">
+  <div class="middle fb-open" id="middleCol">
     <!-- 文件浏览器（深色） -->
     <div class="filebrowser">
       <div class="fb-toolbar">
@@ -1267,12 +1267,16 @@
   const toggleFbBtn = document.getElementById('toggleFilebrowser');
   const middleCol = document.getElementById('middleCol');
   const tbMiddle = document.getElementById('tbMiddle');
+  function syncFbBtn(open){
+    toggleFbBtn.style.color = open ? '#2563EB' : '';
+    toggleFbBtn.style.background = open ? '#eef2ff' : '';
+  }
   toggleFbBtn.addEventListener('click', () => {
     const open = middleCol.classList.toggle('fb-open');
     tbMiddle.classList.toggle('fb-open', open);
-    toggleFbBtn.style.color = open ? '#2563EB' : '';
-    toggleFbBtn.style.background = open ? '#eef2ff' : '';
+    syncFbBtn(open);
   });
+  syncFbBtn(middleCol.classList.contains('fb-open')); // 默认展开
 
   // ── 文件内容数据 ──────────────────────────────────────────
   const FILE_CONTENTS = {
