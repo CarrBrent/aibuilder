@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>数据可视化技能 — 技能工坊</title>
+  <title>员工培训专家 — 专家工坊</title>
   <link rel="icon" type="image/png" href="assets/logo.png"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   <style>
@@ -496,6 +496,38 @@
     }
     .preview-send.active { background: #111827; }
 
+    /* ══ 第一步：澄清问题选项栏（输入框顶部）═══════════════════ */
+    .clarify-bar {
+      border: 1px solid #e3e6ee; border-radius: 12px;
+      background: #fafbfc; padding: 12px 14px; margin-bottom: 10px;
+    }
+    .clarify-progress { font-size: 11px; color: #9aa1af; margin-bottom: 8px; }
+    .clarify-q-title { font-size: 13px; font-weight: 700; color: #1f2329; margin-bottom: 3px; }
+    .clarify-q-sub { font-size: 11.5px; color: #9aa1af; margin-bottom: 10px; }
+    .clarify-options { display: flex; flex-wrap: wrap; gap: 8px; }
+    .clarify-opt {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border-radius: 8px;
+      border: 1px solid #e3e6ee; background: #fff;
+      font-size: 12.5px; color: #4f555f; cursor: pointer;
+      transition: all .12s; user-select: none;
+    }
+    .clarify-opt:hover { border-color: #b9c0cf; }
+    .clarify-opt .clarify-tick { font-size: 10px; opacity: 0; transition: opacity .1s; }
+    .clarify-opt.selected {
+      border-color: #111827; background: #111827; color: #fff; font-weight: 600;
+    }
+    .clarify-opt.selected .clarify-tick { opacity: 1; }
+    .clarify-footer { display: flex; align-items: center; margin-top: 12px; gap: 10px; }
+    .clarify-hint-text { font-size: 11px; color: #b0b6c2; }
+    .clarify-next {
+      margin-left: auto; padding: 7px 18px; border-radius: 8px; border: none;
+      background: #e3e6ee; color: #9aa1af; font-size: 12.5px; font-weight: 600;
+      cursor: not-allowed; transition: all .12s;
+    }
+    .clarify-next.ready { background: #111827; color: #fff; cursor: pointer; }
+    .clarify-next.ready:hover { background: #1f2d3d; }
+
     /* ══ Tips 轮播面板 ════════════════════════════════════════ */
     .tips-panel {
       flex: 1; min-height: 0;
@@ -860,10 +892,10 @@
 <header class="topbar">
   <!-- 左段：与左栏同宽 -->
   <div class="tb-left">
-    <button class="tb-icon" id="backBtn" title="返回技能工坊"><i class="fas fa-chevron-left"></i></button>
+    <button class="tb-icon" id="backBtn" title="返回专家工坊"><i class="fas fa-chevron-left"></i></button>
     <div class="tb-sep"></div>
-    <div class="tb-skill-icon">📊</div>
-    <span class="tb-skill-name">数据可视化技能</span>
+    <div class="tb-skill-icon">🎓</div>
+    <span class="tb-skill-name">员工培训专家</span>
     <i class="fas fa-chevron-down tb-chevron"></i>
     <div class="tb-sep"></div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:2px">
@@ -939,7 +971,7 @@
 
     <!-- 左下 AI 对话输入 -->
     <div class="left-chat">
-      <div class="chat-hint">欢迎使用技能工坊，可以在此输入你的要求。</div>
+      <div class="chat-hint">欢迎使用专家工坊，可以在此输入你的要求。</div>
       <textarea class="chat-textarea" placeholder="输入修改需求…"></textarea>
       <div class="chat-bottom">
         <div class="chat-icon-btn" title="上传文件"><i class="fas fa-file-upload"></i></div>
@@ -1080,7 +1112,7 @@
           </defs>
         </svg>
       </div>
-      <div class="tips-generating">技能正<strong>在生成</strong>中...</div>
+      <div class="tips-generating">专家正<strong>在生成</strong>中...</div>
       <div class="tips-carousel" id="tipsCarousel">
         <div class="tips-track" id="tipsTrack">
           <!-- 由 JS 渲染 -->
@@ -1091,7 +1123,7 @@
     <!-- 摘要条 -->
     <div class="summary-bar" id="previewSummary" style="display:none">
       <button class="summary-back"><i class="fas fa-chevron-left"></i></button>
-      <div class="summary-text">chart-generator技能说明与触发 解析：1. 核心主题：chart-generator技能  2. 产物类型：说明</div>
+      <div class="summary-text">员工培训专家创建 · 第 1 步：确认培训需求关键信息</div>
       <div class="summary-ai-tag">对话由 AI 生成</div>
     </div>
 
@@ -1100,6 +1132,8 @@
 
     <!-- 输入框 -->
     <div class="preview-input-area" id="previewInputArea" style="display:none">
+      <!-- 第一步：澄清问题选项栏（用户选完才生成专家内容） -->
+      <div class="clarify-bar" id="clarifyBar" style="display:none"></div>
       <div class="preview-input-box">
         <textarea class="preview-textarea" id="previewInput" placeholder="发送消息…"></textarea>
         <div class="preview-input-bottom">
@@ -1435,12 +1469,12 @@
 
   // ══ Tips 轮播 ══════════════════════════════════════════════
   const TIPS = [
-    { icon: 'fas fa-bullseye', color: 'blue',   title: '单一职责原则',     desc: '每个 Skill 只做一件事，功能越聚焦，触发越精准。' },
-    { icon: 'fas fa-file-alt', color: 'green',  title: 'SKILL.md 是入口',  desc: '务必在 SKILL.md 中清晰描述技能的触发场景和使用方式。' },
-    { icon: 'fas fa-bolt',     color: 'orange', title: '触发词要具体',     desc: '使用领域词汇作为触发词，避免宽泛词如"处理"、"生成"。' },
-    { icon: 'fas fa-layer-group', color: 'purple', title: '分层组织文件',  desc: '将核心脚本、数据规范、配置分目录存放，便于维护和复用。' },
-    { icon: 'fas fa-flask',    color: 'pink',   title: '先写示例再写代码', desc: '在 SKILL.md 中先写用法示例，有助于明确边界和预期输出。' },
-    { icon: 'fas fa-shield-alt', color: 'teal', title: '做好错误处理',     desc: '在脚本中对异常输入添加校验，提升 Skill 的健壮性和用户体验。' },
+    { icon: 'fas fa-bullseye', color: 'blue',   title: '明确专家角色',     desc: '清晰定义专家的职责边界与擅长领域，定位越聚焦越专业。' },
+    { icon: 'fas fa-sitemap',  color: 'green',  title: '编排技能与知识',   desc: '专家由多个技能 + 知识库组合而成，合理编排才能协同。' },
+    { icon: 'fas fa-bolt',     color: 'orange', title: '面向场景设计',     desc: '从真实业务场景出发，让专家的产出可直接落地使用。' },
+    { icon: 'fas fa-layer-group', color: 'purple', title: '分层组织能力',  desc: '将培训诊断、课程规划、效果评估分模块编排，便于复用。' },
+    { icon: 'fas fa-flask',    color: 'pink',   title: '先对齐再生成',     desc: '生成前先确认关键问题，让专家产出贴合你的真实需求。' },
+    { icon: 'fas fa-shield-alt', color: 'teal', title: '可追溯可评估',     desc: '专家结论应给出依据与评估方式，便于验证和持续优化。' },
   ];
 
   const tipsList = document.getElementById('tipsList');
@@ -1530,7 +1564,7 @@
       delay: 200,
       html: `<div class="pack-section">
   <div class="pack-label">打包文件</div>
-  <div class="pack-path">/workspace/projects/chart-generator.skill (8KB)</div>
+  <div class="pack-path">/workspace/projects/employee-training-expert.agent (12KB)</div>
   <div class="pack-actions">
     <button class="pack-icon-btn" title="点赞"><i class="fas fa-thumbs-up"></i></button>
     <button class="pack-icon-btn" title="踩"><i class="fas fa-thumbs-down"></i></button>
@@ -1542,26 +1576,26 @@
   ];
 
   const ABILITIES = [
-    { h: '1. 数据接收与解析', items: ['支持 JSON 格式输入', '自动标准化数据结构'] },
-    { h: '2. 智能图表类型匹配', items: ['时间序列数据 → 折线图', '类别对比数据 → 柱状图', '占比数据（<8类）→ 环形图', '多系列数据 → 分组柱状图'] },
-    { h: '3. 高质量图像生成', items: ['支持 PNG/SVG/HTML 等格式', '可配置主题风格（light/dark）', '专业配色方案'] },
+    { h: '1. 培训需求诊断', items: ['解析岗位能力模型与岗位画像', '识别员工能力差距（技能/知识/态度）', '按新员工 / 在岗 / 管理者分层定位'] },
+    { h: '2. 课程体系规划', items: ['自动生成分阶段培训路径', '匹配课程形式（线上 / 线下 / 实操）', '推荐配套学习资料与考核方式'] },
+    { h: '3. 培训实施与跟踪', items: ['生成培训计划表与日程', '设计学习考核与效果评估', '追踪完成率并预警未达标人员'] },
   ];
 
   const CODE1_LINES = [
-    { ln:1, code:'chart-generator/' },
-    { ln:2, code:'├── SKILL.md          <span class="t-comment"># 入口文档</span>' },
-    { ln:3, code:'├── scripts/' },
-    { ln:4, code:'|   └── generate_chart.py  <span class="t-comment"># 核心图表生成脚本</span>' },
-    { ln:5, code:'└── references/' },
-    { ln:6, code:'    └── data-format.md    <span class="t-comment"># 数据格式规范</span>' },
+    { ln:1, code:'employee-training-expert/' },
+    { ln:2, code:'├── EXPERT.md             <span class="t-comment"># 专家入口与职责定义</span>' },
+    { ln:3, code:'├── skills/' },
+    { ln:4, code:'|   ├── training_plan.md    <span class="t-comment"># 培训计划生成技能</span>' },
+    { ln:5, code:'|   └── exam_designer.md     <span class="t-comment"># 考核与评估技能</span>' },
+    { ln:6, code:'└── knowledge/' },
+    { ln:7, code:'    └── competency-model.md <span class="t-comment"># 岗位能力模型库</span>' },
   ];
 
   const CODE2_LINES = [
-    { ln:1, code:'<span class="t-fn">python</span> scripts/generate_chart.py \\' },
-    { ln:2, code:'    <span class="t-arg">--data</span> <span class="t-str">\'{"labels":["Q1","Q2","Q3","Q4"],"values":[120,150,180,200]}\'</span> \\' },
-    { ln:3, code:'    <span class="t-arg">--chart_type</span> <span class="t-str">"auto"</span> \\' },
-    { ln:4, code:'    <span class="t-arg">--title</span> <span class="t-str">"年度销售额趋势"</span> \\' },
-    { ln:5, code:'    <span class="t-arg">--output</span> <span class="t-str">"chart.png"</span>' },
+    { ln:1, code:'<span class="t-comment"># 自然语言直接调用，无需命令</span>' },
+    { ln:2, code:'<span class="t-str">"为 10 名新入职客服设计一套两周入职培训计划"</span>' },
+    { ln:3, code:'<span class="t-str">"给销售团队做一份产品知识考核试卷"</span>' },
+    { ln:4, code:'<span class="t-str">"分析这次培训的完成率，列出未达标名单"</span>' },
   ];
 
   function appendBlock(html) {
@@ -1636,6 +1670,7 @@
   }
 
   // ══ 左栏完成后切换右栏 ═════════════════════════════════════
+  // 第一步：先抛澄清问题，用户在输入框顶部选择后才生成专家内容
   function showPreview() {
     clearInterval(tipsInterval);
     const tipsPanel = document.getElementById('tipsPanel');
@@ -1646,30 +1681,123 @@
       document.getElementById('previewSummary').style.display = '';
       document.getElementById('previewMessages').style.display = '';
       document.getElementById('previewInputArea').style.display = '';
-      // 初始消息
-      addUserMsg('「chart-generator」这个技能能做什么，怎么触发它？');
+      // 用户原始诉求
+      addUserMsg('帮我创建一个员工培训专家，能根据岗位设计培训方案');
+      // AI 先确认关键信息，再生成
       addAiMsg(`
-        <h1>chart-generator 技能说明</h1>
-        <p><strong>chart-generator</strong> 是一个专业级数据可视化图表生成技能，核心能力如下：</p>
-        <h2>功能定位</h2>
-        <p>将结构化数据自动转化为专业级可视化图表，支持智能图表类型匹配，包括但不限于：</p>
-        <ul>
-          <li><strong>折线图</strong> — 展示数据趋势变化</li>
-          <li><strong>柱状图</strong> — 对比不同类别的数据量</li>
-          <li><strong>饼图</strong> — 呈现各部分占整体的比例关系</li>
-          <li><strong>散点图</strong> — 揭示两个变量之间的相关性</li>
-        </ul>
-        <h2>触发方式</h2>
-        <p>当你有以下需求时，直接用自然语言描述即可触发：</p>
-        <ul>
-          <li>"帮我画一个折线图，展示上半年每月销售额"</li>
-          <li>"把这份销售数据做成柱状图"</li>
-          <li>"生成一个饼图，显示各产品线占比"</li>
-          <li>"用图表展示这组数据的趋势"</li>
-        </ul>
-        <p>本质上，只要你的需求涉及<em>从数据到图表的可视化转换</em>，这个技能就会自动匹配介入。</p>
-      `, true);
+        <p>好的，我来帮你打造一位<strong>员工培训专家</strong> 🎓。</p>
+        <p>在生成之前，我需要先和你确认几个关键问题，以便专家的产出更贴合你的实际场景。请在下方<strong>逐题选择</strong>，全部确认后我会立即开始生成。</p>
+      `, false);
+      startClarify();
     }, 400);
+  }
+
+  // ══ 澄清问题引擎 ═══════════════════════════════════════════
+  const CLARIFY_QS = [
+    {
+      title: '本次培训主要面向哪类员工？',
+      sub: '决定培训内容的深度与侧重',
+      multi: false,
+      options: ['新入职员工', '在岗骨干', '管理者/储备干部', '全员通用'],
+    },
+    {
+      title: '希望专家覆盖哪些培训环节？',
+      sub: '可多选，决定专家编排哪些技能',
+      multi: true,
+      options: ['需求诊断', '课程体系设计', '培训计划排期', '考核与评估', '效果跟踪复盘'],
+    },
+    {
+      title: '主要采用哪种培训形式？',
+      sub: '影响课程形式与资料推荐',
+      multi: true,
+      options: ['线上课程', '线下集训', '导师带教', '实战演练'],
+    },
+    {
+      title: '培训成果如何衡量？',
+      sub: '决定专家输出的评估方式',
+      multi: false,
+      options: ['考试/测验通过率', '实操考核达标', '行为改变与绩效提升', '暂不设硬性指标'],
+    },
+  ];
+  const clarifyBar = document.getElementById('clarifyBar');
+  let clarifyIdx = 0;
+  const clarifyAnswers = [];
+
+  function renderClarify() {
+    const q = CLARIFY_QS[clarifyIdx];
+    const picked = new Set();
+    clarifyBar.style.display = 'block';
+    clarifyBar.innerHTML = `
+      <div class="clarify-progress">第 ${clarifyIdx + 1} / ${CLARIFY_QS.length} 个问题 · ${q.multi ? '可多选' : '单选'}</div>
+      <div class="clarify-q-title">${q.title}</div>
+      <div class="clarify-q-sub">${q.sub}</div>
+      <div class="clarify-options" id="clarifyOptions">
+        ${q.options.map((o, i) => `<div class="clarify-opt" data-i="${i}"><i class="fas fa-check clarify-tick"></i>${o}</div>`).join('')}
+      </div>
+      <div class="clarify-footer">
+        <span class="clarify-hint-text">${q.multi ? '选择一项或多项' : '请选择一项'}</span>
+        <button class="clarify-next" id="clarifyNext">${clarifyIdx === CLARIFY_QS.length - 1 ? '开始生成' : '下一步'}</button>
+      </div>`;
+    const optsEl = clarifyBar.querySelectorAll('.clarify-opt');
+    const nextBtn = document.getElementById('clarifyNext');
+    const syncNext = () => nextBtn.classList.toggle('ready', picked.size > 0);
+    optsEl.forEach(el => el.addEventListener('click', () => {
+      const i = +el.dataset.i;
+      if (q.multi) {
+        if (picked.has(i)) { picked.delete(i); el.classList.remove('selected'); }
+        else { picked.add(i); el.classList.add('selected'); }
+      } else {
+        picked.clear(); picked.add(i);
+        optsEl.forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+      }
+      syncNext();
+    }));
+    nextBtn.addEventListener('click', () => {
+      if (!picked.size) return;
+      const chosen = [...picked].map(i => q.options[i]);
+      clarifyAnswers.push({ q: q.title, a: chosen });
+      addUserMsg(chosen.join('、'));
+      clarifyIdx++;
+      if (clarifyIdx < CLARIFY_QS.length) {
+        setTimeout(renderClarify, 200);
+      } else {
+        clarifyBar.style.display = 'none';
+        clarifyBar.innerHTML = '';
+        generateExpert();
+      }
+    });
+  }
+  function startClarify() { clarifyIdx = 0; clarifyAnswers.length = 0; renderClarify(); }
+
+  // ══ 第二步：依据确认信息生成专家内容 ═══════════════════════
+  function generateExpert() {
+    const objMap = { '需求诊断':'培训需求诊断','课程体系设计':'课程体系规划','培训计划排期':'培训计划排期','考核与评估':'考核与效果评估','效果跟踪复盘':'效果跟踪复盘' };
+    const aud = (clarifyAnswers[0]?.a || ['全员通用'])[0];
+    const stages = (clarifyAnswers[1]?.a || []).map(x => objMap[x] || x);
+    const forms = (clarifyAnswers[2]?.a || []).join('、');
+    const metric = (clarifyAnswers[3]?.a || ['行为改变与绩效提升'])[0];
+    addAiMsg(`
+      <h1>员工培训专家 · 已生成</h1>
+      <p>已根据你的确认信息完成<strong>员工培训专家</strong>的配置：</p>
+      <h2>专家定位</h2>
+      <p>面向<strong>${aud}</strong>的培训管理专家，从需求诊断到效果评估全流程协同，让培训方案可落地、可衡量。</p>
+      <h2>覆盖环节</h2>
+      <ul>
+        ${(stages.length ? stages : ['培训需求诊断','课程体系规划','考核与效果评估']).map(s => `<li><strong>${s}</strong></li>`).join('')}
+      </ul>
+      <h2>培训形式</h2>
+      <p>${forms || '线上课程 + 导师带教'}</p>
+      <h2>成果衡量</h2>
+      <p>以<strong>${metric}</strong>作为核心评估口径，自动追踪完成情况并预警未达标人员。</p>
+      <h2>触发方式</h2>
+      <ul>
+        <li>"为 10 名新入职客服设计一套两周入职培训计划"</li>
+        <li>"给销售团队做一份产品知识考核试卷"</li>
+        <li>"分析这次培训的完成率，列出未达标名单"</li>
+      </ul>
+      <p>只要你的需求涉及<em>员工能力提升与培训管理</em>，这位专家就会自动介入。</p>
+    `, true);
   }
 
   // 预览消息区
@@ -1679,7 +1807,7 @@
     const d = document.createElement('div');
     d.className = 'msg-user';
     d.innerHTML = `<div class="msg-user-bubble">
-      <span class="skill-tag"><i class="fas fa-bolt"></i>数据可视化技能</span>${text}
+      <span class="skill-tag"><i class="fas fa-bolt"></i>员工培训专家</span>${text}
     </div>`;
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
@@ -1731,7 +1859,7 @@
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 保存中…';
     setTimeout(() => {
-      window.location.href = 'skills.html';
+      window.location.href = 'experts.html';
     }, 800);
   });
 </script>
