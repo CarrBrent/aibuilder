@@ -79,11 +79,9 @@
     .sb-logo-icon {
       width: 28px; height: 28px;
       border-radius: 8px;
-      background: linear-gradient(135deg, #1B1B22 0%, #3A3A48 100%);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; color: #fff; font-weight: 800;
       flex-shrink: 0;
-      letter-spacing: -0.5px;
+      object-fit: cover;
+      display: block;
       box-shadow: 0 1px 2px rgba(16,16,20,.18);
     }
     .sb-logo-text {
@@ -202,7 +200,7 @@
     sidebarEl.id = 'sb-sidebar';
     sidebarEl.innerHTML = `
       <div class="sb-logo">
-        <div class="sb-logo-icon">AI</div>
+        <img class="sb-logo-icon" src="assets/logo.png" alt="AI Builder"/>
         <span class="sb-logo-text">AI Builder</span>
         <span class="sb-logo-tag">内部</span>
       </div>
