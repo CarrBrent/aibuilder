@@ -85,8 +85,8 @@
       box-shadow: 0 1px 2px rgba(16,16,20,.18);
     }
     .sb-logo-text {
-      font-size: 14px; font-weight: 700; color: var(--text-main);
-      white-space: nowrap; letter-spacing: -0.3px;
+      font-size: 16px; font-weight: 600; color: var(--text-main);
+      white-space: nowrap; letter-spacing: 0;
     }
     .sb-logo-tag {
       font-size: 9px; font-weight: 700; color: var(--text-muted);
@@ -200,8 +200,8 @@
     sidebarEl.id = 'sb-sidebar';
     sidebarEl.innerHTML = `
       <div class="sb-logo">
-        <img class="sb-logo-icon" src="assets/logo.png" alt="AI Builder"/>
-        <span class="sb-logo-text">AI Builder</span>
+        <img class="sb-logo-icon" src="assets/logo.png" alt="SkillHub"/>
+        <span class="sb-logo-text">SkillHub</span>
         <span class="sb-logo-tag">内部</span>
       </div>
       <a class="sb-nav-item ${activeKey === 'create' ? 'active' : ''}" href="create.html" style="margin:4px 8px 2px;border-radius:8px;background:#111;color:#fff;font-weight:600;">
