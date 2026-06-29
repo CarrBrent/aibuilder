@@ -1047,7 +1047,47 @@
 
         <!-- ── 其他 Tab 占位内容 ── -->
         <div class="cw-tab-content" id="tabContentPlugins">
-          <div class="cw-placeholder"><i class="fas fa-user-tie"></i><span>专家管理功能即将上线</span></div>
+          <div class="cw-composer" id="exComposer">
+            <div class="cw-tab-hint" id="exHint">
+              <span class="cw-tab-key">Tab</span>
+              <span class="cw-tab-text" id="exHintText">帮我创建一个法务合规专家，能审查合同风险并给出合规建议</span>
+            </div>
+            <textarea class="cw-textarea" id="exTextarea"></textarea>
+            <div class="cw-opt-view" id="exOptView">
+              <div class="cw-opt-before">
+                <div class="cw-opt-before-label">优化前</div>
+                <div id="exOptBefore"></div>
+              </div>
+              <div>
+                <div class="cw-opt-after-label">优化后</div>
+                <div id="exOptAfter"></div>
+              </div>
+            </div>
+            <div class="cw-bottom">
+              <div class="cw-add-wrap">
+                <button class="cw-icon-btn" id="exAddBtn"><i class="fas fa-plus"></i></button>
+                <div class="cw-dropdown" id="exDropdown">
+                  <div class="cw-dropdown-item" id="exAddLocal"><i class="fas fa-file"></i> 本地文件</div>
+                  <div class="cw-dropdown-item" id="exAddDoc"><i class="fas fa-book-open"></i> JoySpace 文档</div>
+                  <div class="cw-dropdown-item" id="exAddJoyclaw"><i class="fas fa-database"></i> JoyClaw 知识库</div>
+                  <div class="cw-dropdown-item" id="exAddJoyagent"><i class="fas fa-layer-group"></i> JoyAgent 知识库</div>
+                  <div class="cw-dropdown-item" id="exAddCli"><i class="fas fa-terminal"></i> CLI</div>
+                </div>
+              </div>
+              <button class="cw-icon-btn" id="exZipBtn" title="上传专家配置包"><i class="fas fa-file-archive"></i></button>
+              <input type="file" id="exLocalFile" style="display:none">
+              <div class="cw-right-btns">
+                <div class="cw-opt-actions hidden" id="exOptActions">
+                  <button class="cw-icon-btn" id="exRefresh" title="重新生成"><i class="fas fa-redo"></i></button>
+                  <button class="cw-icon-btn" id="exCancelOpt" title="取消优化"><i class="fas fa-times"></i></button>
+                </div>
+                <button class="cw-optimize-btn hidden" id="exOptBtn"><i class="fas fa-magic"></i> 一键优化</button>
+                <button class="cw-auto-btn" id="exAutoBtn">Auto <i class="fas fa-chevron-down" style="font-size:10px"></i></button>
+                <button class="cw-icon-btn" title="语音输入"><i class="fas fa-microphone" style="color:#888"></i></button>
+                <button class="cw-send" id="exSend"><i class="fas fa-arrow-up"></i></button>
+              </div>
+            </div>
+          </div><!-- /exComposer -->
         </div>
         <div class="cw-tab-content" id="tabContentConnector">
           <div class="cw-placeholder"><i class="fas fa-link"></i><span>连接器配置功能即将上线</span></div>
@@ -1147,6 +1187,12 @@ const TYPE_TAB_MAP = {
   connector: 'tabContentConnector',
   prompt:    'tabContentPrompt',
 };
+const TYPE_TITLE = {
+  skills:    { t:'你来描述，AI 自动构建', s:'输入你的想法，30 秒生成可运行的技能、智能体与工作流' },
+  plugins:   { t:'你来描述，AI 自动创建专家', s:'描述专家的职责，自动编排技能与知识库，生成可协同的智能专家' },
+  connector: { t:'你来描述，AI 自动构建', s:'输入你的想法，30 秒生成可运行的技能、智能体与工作流' },
+  prompt:    { t:'你来描述，AI 自动构建', s:'输入你的想法，30 秒生成可运行的技能、智能体与工作流' },
+};
 document.querySelectorAll('.cw-type-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.cw-type-tab').forEach(t => t.classList.remove('active'));
@@ -1155,6 +1201,8 @@ document.querySelectorAll('.cw-type-tab').forEach(tab => {
     document.querySelectorAll('.cw-tab-content').forEach(c => c.classList.remove('active'));
     const target = document.getElementById(TYPE_TAB_MAP[type]);
     if (target) target.classList.add('active');
+    const tt=TYPE_TITLE[type];
+    if(tt){ document.querySelector('.cw-title').textContent=tt.t; document.querySelector('.cw-subtitle').textContent=tt.s; }
   });
 });
 
@@ -1394,13 +1442,15 @@ function kbEnterSpace(sp){
   kbSearch.placeholder='搜索知识库...'; kbSearch.value='';
   kbRenderRows(sp.kbs,kb=>kbPick(`${sp.name} / ${kb.name}`),false);
 }
+let kbTargetTa=ta, kbTargetSync=syncUI;
 function kbPick(label){
   const prefix=kbMode==='joyclaw'?'JoyClaw 知识库':'JoyAgent 知识库';
-  ta.value+=(ta.value?'\n':'')+`[${prefix}：${label}]`; syncUI();
+  kbTargetTa.value+=(kbTargetTa.value?'\n':'')+`[${prefix}：${label}]`; kbTargetSync();
   kbCloseModal();
 }
-function kbOpen(mode){
-  kbMode=mode; kbModal.classList.remove('hidden');
+function kbOpen(mode,targetTa,targetSync){
+  kbMode=mode; kbTargetTa=targetTa||ta; kbTargetSync=targetSync||syncUI;
+  kbModal.classList.remove('hidden');
   if(mode==='joyclaw') kbShowJoyclaw(); else kbShowSpaces();
 }
 function kbCloseModal(){ kbModal.classList.add('hidden'); }
@@ -1415,6 +1465,114 @@ kbSearch.addEventListener('input',()=>{
   else if(kbStage==='space') kbRenderRows(JOYAGENT_SPACES,sp=>kbEnterSpace(sp),true);
   else kbRenderRows(kbCurSpace.kbs,kb=>kbPick(`${kbCurSpace.name} / ${kb.name}`),false);
 });
+
+// ══════════════════════════════════════════════════════════
+// 专家 Tab 输入框（由技能能力平移，去掉录屏，文案改为专家创建）
+// ══════════════════════════════════════════════════════════
+(function(){
+  const exTa=document.getElementById('exTextarea');
+  const exComposer=document.getElementById('exComposer');
+  const exOptBtn=document.getElementById('exOptBtn');
+  const exOptActions=document.getElementById('exOptActions');
+  const exSend=document.getElementById('exSend');
+  const exHintBox=document.getElementById('exHint');
+  const exHintEl=document.getElementById('exHintText');
+
+  // hint 轮播（专家场景文案）
+  const EX_HINTS=[
+    '帮我创建一个法务合规专家，能审查合同风险并给出合规建议',
+    '创建一个人力资源专家，覆盖招聘、考勤、薪酬与绩效',
+    '做一个财务分析专家，自动完成报表勾稽校验与审计底稿',
+    '帮我创建一个行政办公专家，擅长会议纪要、PPT 与文档',
+    '创建一个数据可视化专家，把数据自动转成专业图表',
+  ];
+  let exIdx=0,exChar=0,exHTimer=null;
+  function exTickHint(){
+    const t=EX_HINTS[exIdx];
+    if(exChar<=t.length){ exHintEl.textContent=t.slice(0,exChar); exChar++; exHTimer=setTimeout(exTickHint,38); }
+    else { exHTimer=setTimeout(()=>{ exIdx=(exIdx+1)%EX_HINTS.length; exChar=0; exTickHint(); },3000); }
+  }
+  exHTimer=setTimeout(exTickHint,600);
+
+  function exSyncUI(){
+    const has=exTa.value.trim().length>0;
+    exHintBox.classList.toggle('hidden',has);
+    exOptBtn.classList.toggle('hidden',!has||exComposer.classList.contains('optimized'));
+    exSend.style.background=has?'#1A1A1E':'#D8DDE6';
+  }
+  exTa.addEventListener('input',exSyncUI);
+  exTa.addEventListener('keydown',e=>{
+    if(e.key==='Tab' && !exTa.value.trim()){ e.preventDefault(); exTa.value=EX_HINTS[exIdx]; exSyncUI(); }
+  });
+
+  // 一键优化（流式，复用全局 startStream/stopStream，输出到专家面板）
+  function exStartStream(lines,onDone){
+    const el=document.getElementById('exOptAfter');
+    el.innerHTML=''; exOptActions.classList.add('hidden');
+    const cursor=Object.assign(document.createElement('span'),{className:'cw-stream-cursor'});
+    let li=0,ci=0,p=null,timer=null;
+    function tick(){
+      if(li>=lines.length){ cursor.remove(); onDone&&onDone(); return; }
+      if(ci===0){ p=document.createElement('p'); el.appendChild(p); }
+      const line=lines[li];
+      if(ci<line.length){ cursor.remove(); p.appendChild(document.createTextNode(line[ci])); p.appendChild(cursor); ci++; timer=setTimeout(tick,18); }
+      else { cursor.remove(); li++; ci=0; timer=setTimeout(tick,60); }
+      document.getElementById('exOptView').scrollTop=9999;
+    }
+    el.appendChild(cursor); timer=setTimeout(tick,80);
+    exComposer._streamTimer=()=>{ if(timer) clearTimeout(timer); };
+  }
+  function exStopStream(){ if(exComposer._streamTimer) exComposer._streamTimer(); }
+  function exBuildOpt(orig,retry){
+    return [
+      `创建一位能够${orig.length>14?'胜任上述职责':'完成对应业务'}的专业智能专家${retry?'，并支持持续学习与反馈迭代':''}。`,
+      `1. 明确专家的角色定位与擅长领域，准确理解用户的业务目标。`,
+      `2. 自动编排所需技能与知识库，形成可协同执行的任务流程。`,
+      `3. 输出专业、可靠且可追溯的结论，并给出下一步行动建议。`,
+    ];
+  }
+  function exRunOptimize(retry){
+    const orig=exTa.value.trim(); if(!orig) return;
+    exStopStream();
+    document.getElementById('exOptBefore').textContent=orig;
+    exComposer.classList.add('optimized');
+    exOptBtn.classList.add('hidden'); exOptActions.classList.add('hidden');
+    exSend.style.background='#1A1A1E';
+    exStartStream(exBuildOpt(orig,retry),()=>exOptActions.classList.remove('hidden'));
+  }
+  exOptBtn.addEventListener('click',()=>exRunOptimize(false));
+  document.getElementById('exRefresh').addEventListener('click',()=>exRunOptimize(true));
+  document.getElementById('exCancelOpt').addEventListener('click',()=>{
+    exStopStream(); exComposer.classList.remove('optimized');
+    exOptActions.classList.add('hidden'); exSyncUI();
+  });
+  exSend.addEventListener('click',()=>{ if(exTa.value.trim()) window.location.href='create.html'; });
+
+  // 加号下拉（fixed 定位，复用知识库弹窗）
+  const exAddBtn=document.getElementById('exAddBtn');
+  const exDd=document.getElementById('exDropdown');
+  function exPositionDd(){
+    const r=exAddBtn.getBoundingClientRect();
+    exDd.style.visibility='hidden'; exDd.style.display='block';
+    const h=exDd.offsetHeight,gap=8;
+    exDd.style.display=''; exDd.style.visibility='';
+    const above=r.top-gap-h;
+    exDd.style.top=(above>=8?above:r.bottom+gap)+'px';
+    exDd.style.left=r.left+'px';
+  }
+  exAddBtn.addEventListener('click',e=>{ e.stopPropagation(); const willOpen=!exDd.classList.contains('open'); if(willOpen) exPositionDd(); exDd.classList.toggle('open'); });
+  document.addEventListener('click',()=>exDd.classList.remove('open'));
+  window.addEventListener('resize',()=>{ if(exDd.classList.contains('open')) exPositionDd(); });
+  document.getElementById('exAddLocal').addEventListener('click',()=>{ exDd.classList.remove('open'); document.getElementById('exLocalFile').click(); });
+  document.getElementById('exLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ exTa.value+=(exTa.value?'\n':'')+'[附件：'+f.name+']'; exSyncUI(); } e.target.value=''; });
+  document.getElementById('exAddDoc').addEventListener('click',()=>{ exDd.classList.remove('open'); exTa.value+=(exTa.value?'\n':'')+'[JoySpace 文档：专家能力说明.docx]'; exSyncUI(); });
+  document.getElementById('exAddCli').addEventListener('click',()=>{ exDd.classList.remove('open'); exTa.value+=(exTa.value?'\n':'')+'[CLI 引用已添加]'; exSyncUI(); });
+  document.getElementById('exAddJoyclaw').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyclaw',exTa,exSyncUI); });
+  document.getElementById('exAddJoyagent').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyagent',exTa,exSyncUI); });
+
+  // 上传配置包：复用技能的 ZIP 弹窗
+  document.getElementById('exZipBtn').addEventListener('click',()=>openZip());
+})();
 
 // ZIP
 const zipModal=document.getElementById('zipModal');
