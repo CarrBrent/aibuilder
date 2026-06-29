@@ -1155,7 +1155,7 @@
 <div class="modal-mask hidden" id="zipModal">
   <div class="modal-box">
     <div class="modal-hd">
-      <span class="modal-hd-title">上传 Skill ZIP 包</span>
+      <span class="modal-hd-title" id="zipTitle">上传 Skill ZIP 包</span>
       <button class="modal-close" id="zipClose"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-bd">
@@ -1631,7 +1631,7 @@ kbSearch.addEventListener('input',()=>{
   document.getElementById('exAddJoyagent').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyagent',exTa,exSyncUI); });
 
   // 上传配置包：复用技能的 ZIP 弹窗
-  document.getElementById('exZipBtn').addEventListener('click',()=>openZip());
+  document.getElementById('exZipBtn').addEventListener('click',()=>openZip('expert'));
 
   // ══════════════════════════════════════════════════════════
   // 添加 skill：从 Skill Hub / 我的 Skill 选择，输入框内插入技能标签
@@ -1723,9 +1723,14 @@ kbSearch.addEventListener('input',()=>{
 const zipModal=document.getElementById('zipModal');
 const zipProg=document.getElementById('zipProgress');
 let zipTimer=null;
-function openZip(){ zipModal.classList.remove('hidden'); zipProg.classList.add('hidden'); document.getElementById('zipFooter').classList.add('hidden'); document.getElementById('zipBar').style.width='0%'; document.getElementById('zipDrop').classList.remove('hidden'); }
+function openZip(kind){
+  const expert = kind==='expert';
+  document.getElementById('zipTitle').textContent = expert ? '上传专家 ZIP 包' : '上传 Skill ZIP 包';
+  document.getElementById('zipConfirm').textContent = expert ? '开始生成专家' : '开始生成 Skill';
+  zipModal.classList.remove('hidden'); zipProg.classList.add('hidden'); document.getElementById('zipFooter').classList.add('hidden'); document.getElementById('zipBar').style.width='0%'; document.getElementById('zipDrop').classList.remove('hidden');
+}
 function closeZip(){ zipModal.classList.add('hidden'); clearTimeout(zipTimer); }
-document.getElementById('cwZipBtn').addEventListener('click',openZip);
+document.getElementById('cwZipBtn').addEventListener('click',()=>openZip('skill'));
 document.getElementById('zipClose').addEventListener('click',closeZip);
 document.getElementById('zipCancel').addEventListener('click',closeZip);
 zipModal.addEventListener('click',e=>{ if(e.target===zipModal) closeZip(); });
