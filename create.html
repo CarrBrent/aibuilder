@@ -858,6 +858,8 @@
               <div id="cwOptAfter"></div>
             </div>
           </div>
+          <!-- 已添加引用标签（本地文件/文档/知识库/CLI/技能） -->
+          <div class="cw-skill-chips" id="cwChips"></div>
           <div class="cw-bottom">
             <div class="cw-add-wrap">
               <button class="cw-icon-btn" id="cwAddBtn"><i class="fas fa-plus"></i></button>
@@ -1325,6 +1327,29 @@ function syncUI(){
   // 录屏浮层引导：仅在空输入 + 非优化态时显示
   recordHint.classList.toggle('hidden', has || composer.classList.contains('optimized'));
 }
+// ══════════════════════════════════════════════════════════
+// 统一引用标签管理器（加号里所有项 + 添加 skill，添加后均显示为 chip）
+// 技能 / 专家两个输入框共用同一套实现，样式与行为统一
+// ══════════════════════════════════════════════════════════
+function makeChipManager(containerId){
+  const box = document.getElementById(containerId);
+  const items = [];   // {icon, label}
+  function render(){
+    box.innerHTML = items.map((it,i)=>{
+      const ic = it.icon==='/' ? '<span class="chip-ic" style="font-weight:700">/</span>'
+                               : `<i class="fas ${it.icon} chip-ic"></i>`;
+      return `<span class="cw-skill-chip">${ic}${it.label}<i class="fas fa-times chip-x" data-i="${i}"></i></span>`;
+    }).join('');
+    box.querySelectorAll('.chip-x').forEach(x=>x.addEventListener('click',()=>{ items.splice(+x.dataset.i,1); render(); }));
+  }
+  return {
+    add(icon,label){ if(items.some(it=>it.label===label)) return; items.push({icon,label}); render(); },
+    labels(){ return items.map(it=>it.label); },
+    items,
+  };
+}
+const cwChipMgr = makeChipManager('cwChips');
+
 const _tplPrompt = new URLSearchParams(location.search).get('prompt');
 if (_tplPrompt) { ta.value = decodeURIComponent(_tplPrompt); clearTimeout(hTimer); syncUI(); }
 
@@ -1404,9 +1429,9 @@ addBtn.addEventListener('click',e=>{
 document.addEventListener('click',()=>dd.classList.remove('open'));
 window.addEventListener('resize',()=>{ if(dd.classList.contains('open')) positionDropdown(); });
 document.getElementById('cwAddLocal').addEventListener('click',()=>{ dd.classList.remove('open'); document.getElementById('cwLocalFile').click(); });
-document.getElementById('cwLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ ta.value+=(ta.value?'\n':'')+'[附件：'+f.name+']'; syncUI(); } e.target.value=''; });
-document.getElementById('cwAddDoc').addEventListener('click',()=>{ dd.classList.remove('open'); ta.value+=(ta.value?'\n':'')+'[JoySpace 文档：技能设计规范.docx]'; syncUI(); });
-document.getElementById('cwAddCli').addEventListener('click',()=>{ dd.classList.remove('open'); ta.value+=(ta.value?'\n':'')+'[CLI 引用已添加]'; syncUI(); });
+document.getElementById('cwLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ cwChipMgr.add('fa-file', f.name); } e.target.value=''; });
+document.getElementById('cwAddDoc').addEventListener('click',()=>{ dd.classList.remove('open'); cwChipMgr.add('fa-book-open','技能设计规范.docx'); });
+document.getElementById('cwAddCli').addEventListener('click',()=>{ dd.classList.remove('open'); cwChipMgr.add('fa-terminal','CLI'); });
 
 // ══════════════════════════════════════════════════════════
 // 知识库选择（JoyClaw：直接选库 / JoyAgent：先选空间再选库）
@@ -1493,14 +1518,14 @@ function kbShowJoyagent(){
 function kbRenderJoyagentKbs(){
   kbRenderRows(kbCurSpace.kbs,kb=>kbPick(`${kbCurSpace.name} / ${kb.name}`),false);
 }
-let kbTargetTa=ta, kbTargetSync=syncUI;
+let kbTargetMgr=cwChipMgr;
 function kbPick(label){
-  const prefix=kbMode==='joyclaw'?'JoyClaw 知识库':'JoyAgent 知识库';
-  kbTargetTa.value+=(kbTargetTa.value?'\n':'')+`[${prefix}：${label}]`; kbTargetSync();
+  const icon=kbMode==='joyclaw'?'fa-database':'fa-layer-group';
+  kbTargetMgr.add(icon, label);
   kbCloseModal();
 }
-function kbOpen(mode,targetTa,targetSync){
-  kbMode=mode; kbTargetTa=targetTa||ta; kbTargetSync=targetSync||syncUI;
+function kbOpen(mode,targetMgr){
+  kbMode=mode; kbTargetMgr=targetMgr||cwChipMgr;
   kbModal.classList.remove('hidden');
   if(mode==='joyclaw') kbShowJoyclaw(); else kbShowJoyagent();
 }
@@ -1604,7 +1629,9 @@ kbSearch.addEventListener('input',()=>{
   exSend.addEventListener('click',()=>{
     if(!exTa.value.trim()) return;
     let url='expert-editor.html';
-    if(exAddedSkills.length) url+='?skills='+encodeURIComponent(exAddedSkills.join(','));
+    // 把已添加的技能（/ 标记）带入专家生成
+    const skills = exChipMgr.items.filter(it=>it.icon==='/').map(it=>it.label);
+    if(skills.length) url+='?skills='+encodeURIComponent(skills.join(','));
     window.location.href=url;
   });
 
@@ -1623,12 +1650,14 @@ kbSearch.addEventListener('input',()=>{
   exAddBtn.addEventListener('click',e=>{ e.stopPropagation(); const willOpen=!exDd.classList.contains('open'); if(willOpen) exPositionDd(); exDd.classList.toggle('open'); });
   document.addEventListener('click',()=>exDd.classList.remove('open'));
   window.addEventListener('resize',()=>{ if(exDd.classList.contains('open')) exPositionDd(); });
+  // 专家输入框统一引用标签管理器（与技能输入框同款）
+  const exChipMgr = makeChipManager('exSkillChips');
   document.getElementById('exAddLocal').addEventListener('click',()=>{ exDd.classList.remove('open'); document.getElementById('exLocalFile').click(); });
-  document.getElementById('exLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ exTa.value+=(exTa.value?'\n':'')+'[附件：'+f.name+']'; exSyncUI(); } e.target.value=''; });
-  document.getElementById('exAddDoc').addEventListener('click',()=>{ exDd.classList.remove('open'); exTa.value+=(exTa.value?'\n':'')+'[JoySpace 文档：专家能力说明.docx]'; exSyncUI(); });
-  document.getElementById('exAddCli').addEventListener('click',()=>{ exDd.classList.remove('open'); exTa.value+=(exTa.value?'\n':'')+'[CLI 引用已添加]'; exSyncUI(); });
-  document.getElementById('exAddJoyclaw').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyclaw',exTa,exSyncUI); });
-  document.getElementById('exAddJoyagent').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyagent',exTa,exSyncUI); });
+  document.getElementById('exLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ exChipMgr.add('fa-file', f.name); } e.target.value=''; });
+  document.getElementById('exAddDoc').addEventListener('click',()=>{ exDd.classList.remove('open'); exChipMgr.add('fa-book-open','专家能力说明.docx'); });
+  document.getElementById('exAddCli').addEventListener('click',()=>{ exDd.classList.remove('open'); exChipMgr.add('fa-terminal','CLI'); });
+  document.getElementById('exAddJoyclaw').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyclaw',exChipMgr); });
+  document.getElementById('exAddJoyagent').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyagent',exChipMgr); });
 
   // 上传配置包：复用技能的 ZIP 弹窗
   document.getElementById('exZipBtn').addEventListener('click',()=>openZip('expert'));
@@ -1653,23 +1682,8 @@ kbSearch.addEventListener('input',()=>{
   ];
   // fa5 兼容
   const FA5={'fa-magnifying-glass':'fa-search','fa-clapperboard':'fa-film','fa-spider':'fa-bug'};
-  const exChips=document.getElementById('exSkillChips');
-  const exAddedSkills=[];   // 已添加技能名
-
-  function exRenderChips(){
-    exChips.innerHTML=exAddedSkills.map((s,i)=>`
-      <span class="cw-skill-chip"><span class="chip-ic" style="font-weight:700">/</span>${s}<i class="fas fa-times chip-x" data-i="${i}"></i></span>
-    `).join('');
-    exChips.querySelectorAll('.chip-x').forEach(x=>x.addEventListener('click',()=>{
-      exAddedSkills.splice(+x.dataset.i,1); exRenderChips(); exSyncUI();
-    }));
-  }
-  function exAddSkill(name){
-    if(exAddedSkills.includes(name)) return;   // 去重
-    exAddedSkills.push(name); exRenderChips(); exSyncUI();
-  }
-  // 暴露给发送/优化逻辑，把技能拼进生成内容
-  window.__exAddedSkills = exAddedSkills;
+  // fa5 兼容已在上方定义；技能添加复用统一 chip 管理器（/ 前缀）
+  function exAddSkill(name){ exChipMgr.add('/', name); }
 
   // 复用 kbModal 作为 skill 选择器（隐藏空间行，单列）
   function openSkillPicker(source){
