@@ -359,9 +359,9 @@
       overflow:hidden; display:flex; flex-direction:column;
     }
     .ex-card:hover { border-color:#ddd; box-shadow:0 4px 18px rgba(0,0,0,.08); transform:translateY(-1px); }
-    .ex-cover { width:100%; aspect-ratio:800/320; background:#f5f6fa; flex-shrink:0; overflow:hidden; line-height:0; }
+    .ex-cover { width:100%; height:120px; background:#f5f6fa; flex-shrink:0; overflow:hidden; line-height:0; }
     .ex-cover svg { display:block; width:100%; height:100%; }
-    .ex-cover img { display:block; width:100%; height:100%; object-fit:contain; }
+    .ex-cover img { display:block; width:100%; height:100%; object-fit:cover; object-position:center center; }
     .ex-body { padding:12px 14px 14px; display:flex; flex-direction:column; gap:4px; }
     .ex-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:2px; }
     .ex-tag { font-size:10px; font-weight:600; color:#555; background:#f5f6fa; border-radius:9999px; padding:2px 8px; }
@@ -1614,11 +1614,11 @@ document.getElementById('zipConfirm').addEventListener('click',()=>{ const fn=do
 const EXAMPLES=[
   {cover:'<img src="assets/cases/case1.jpeg" alt=""/>',tags:[{l:'员工服务'},{l:'长程',c:'green'},{l:'多步骤',c:'orange'}],name:'新员工入职全流程助手',desc:'从 offer 接受到试用期结束，自动化入职材料收集、系统权限开通、导师匹配、培训日历生成和 30/60/90 天目标设定。',uses:3842,author:'HR中台团队',prompt:'帮我做一个新员工入职全流程助手 Skill，覆盖从 offer 接受到试用期结束的完整流程'},
   {cover:'<img src="assets/cases/case2.png" alt=""/>',tags:[{l:'绩效管理'},{l:'长程',c:'green'},{l:'数据分析',c:'orange'}],name:'绩效评估周期管理',desc:'支持季度/年度评估周期的全生命周期管理：目标拆解对齐、360° 评分汇总、绩效分布强制排序、薪酬联动计算。',uses:2761,author:'组织效能团队',prompt:'创建一个绩效评估周期管理 Skill'},
-  {cover:'<img src="assets/cases/case3.webp" alt=""/>',tags:[{l:'薪酬福利'},{l:'合规',c:'orange'},{l:'自动化',c:'green'}],name:'薪酬核算与发放自动化',desc:'按月自动拉取考勤、绩效和调薪数据，完成五险一金和个税计算，生成加密薪资条并分发给员工。',uses:5130,author:'薪酬中心',prompt:'做一个薪酬核算与发放自动化 Skill'},
+  {cover:'<img src="assets/cases/case7.jpeg" alt=""/>',tags:[{l:'薪酬福利'},{l:'合规',c:'orange'},{l:'自动化',c:'green'}],name:'薪酬核算与发放自动化',desc:'按月自动拉取考勤、绩效和调薪数据，完成五险一金和个税计算，生成加密薪资条并分发给员工。',uses:5130,author:'薪酬中心',prompt:'做一个薪酬核算与发放自动化 Skill'},
   {cover:'<img src="assets/cases/case4.jpeg" alt=""/>',tags:[{l:'招聘'},{l:'长程',c:'green'},{l:'AI筛选',c:'orange'}],name:'端到端智能招聘助手',desc:'从 JD 生成到候选人入职的全链路招聘管理：AI 解析简历并评分、自动安排面试、offer 谈判建议生成。',uses:1988,author:'招聘效能组',prompt:'创建一个端到端智能招聘助手 Skill'},
   {cover:'<img src="assets/cases/case5.png" alt=""/>',tags:[{l:'协同办公'},{l:'效率',c:'green'}],name:'会议全生命周期管理',desc:'会前自动生成议程、识别日历冲突；会中实时转写；会后提炼决议、分发行动项并智能催办。',uses:4417,author:'效率工程组',prompt:'做一个会议全生命周期管理 Skill'},
   {cover:'<img src="assets/cases/case6.jpeg" alt=""/>',tags:[{l:'学习发展'},{l:'个性化',c:'orange'},{l:'长程',c:'green'}],name:'员工培训体系管理',desc:'基于岗位能力模型和员工历史学习数据，自动生成个性化培训计划；追踪完成率；识别高潜人才。',uses:1543,author:'人才发展中心',prompt:'创建一个员工培训体系管理 Skill'},
-  {cover:'<img src="assets/cases/case7.jpeg" alt=""/>',tags:[{l:'协同办公'},{l:'审批',c:'gray'},{l:'自动化',c:'green'}],name:'OA审批全流程智能助手',desc:'统一管理差旅、采购、用章等多类审批，自动识别类型并路由审批链，超期自动升级提醒。',uses:6209,author:'数字化办公组',prompt:'做一个 OA 审批全流程智能助手 Skill'},
+  {cover:'<img src="assets/cases/case3.webp" alt=""/>',tags:[{l:'协同办公'},{l:'审批',c:'gray'},{l:'自动化',c:'green'}],name:'OA审批全流程智能助手',desc:'统一管理差旅、采购、用章等多类审批，自动识别类型并路由审批链，超期自动升级提醒。',uses:6209,author:'数字化办公组',prompt:'做一个 OA 审批全流程智能助手 Skill'},
   {cover:'<img src="assets/cases/case1.jpeg" alt=""/>',tags:[{l:'员工服务'},{l:'考勤',c:'gray'}],name:'考勤异常智能处理',desc:'每日汇总打卡异常，按规则分类，向员工推送补卡引导，月末生成考勤报表供 HR 审核。',uses:8834,author:'员工服务中台',prompt:'创建一个考勤异常智能处理 Skill'},
 ];
 const exGrid=document.getElementById('exGrid');
