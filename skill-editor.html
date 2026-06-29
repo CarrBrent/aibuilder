@@ -31,30 +31,30 @@
     /* 左段：与左栏同比例 flex:2（1/3）。
        注意：padding 不写在 flex 项上——flex-basis:0 时 padding 会计入基准宽度，
        导致与无 padding 的下方三栏错位。内边距改用内部首/尾元素的 margin 承载。 */
-    /* 左段：与左栏同比例 flex:4（4/15） */
+    /* 左段：与左栏同宽，固定 4/15，不参与伸缩 */
     .tb-left {
-      flex: 4 1 0; min-width: 0; overflow: hidden;
+      flex: 0 0 26.667%; min-width: 0; overflow: hidden;
       display: flex; align-items: center; gap: 2px;
       border-right: 1px solid #eceef3;
     }
     .tb-left > :first-child { margin-left: 10px; }
     .tb-left > :last-child { margin-right: 10px; }
-    /* 中段：与中栏联动，同比例 flex:2（2/15），默认 0 宽收起 */
+    /* 中段：与中栏联动，固定 2/15 展开（不抢左/右空间），默认 0 宽收起 */
     .tb-middle {
       flex: 0 0 0; width: 0; overflow: hidden;
       display: flex; align-items: center;
       border-right: 0px solid #eceef3;
-      transition: flex-grow .2s ease, flex-basis .2s ease, border-right-width .2s ease;
+      transition: flex-basis .2s ease, border-right-width .2s ease;
       padding: 0;
     }
     .tb-middle.fb-open {
-      flex: 2 1 0; width: auto; min-width: 0;
+      flex: 0 0 13.333%; width: auto; min-width: 0;
       border-right-width: 1px;
     }
     .tb-middle.fb-open > * { margin: 0 8px; }
-    /* 右段：与右栏同比例 flex:9（3/5） */
+    /* 右段：唯一弹性段，吸收剩余——中段展开时只压缩它，左段不动 */
     .tb-right {
-      flex: 9 1 0; min-width: 0; overflow: hidden;
+      flex: 1 1 0; min-width: 0; overflow: hidden;
       display: flex; align-items: center; gap: 4px;
     }
     .tb-right > :first-child { margin-left: 12px; }
@@ -115,7 +115,7 @@
 
     /* ══ 左栏 ════════════════════════════════════════════════ */
     .left {
-      flex: 4 1 0; min-width: 0;
+      flex: 0 0 26.667%; min-width: 0;
       background: #fff;
       border-right: 1px solid #eceef3;
       display: flex; flex-direction: column;
@@ -249,10 +249,10 @@
       display: flex; flex-direction: column;
       border-right: 0px solid #eceef3;
       overflow: hidden;
-      transition: flex-grow .2s ease, flex-basis .2s ease, border-right-width .2s ease;
+      transition: flex-basis .2s ease, border-right-width .2s ease;
     }
     .middle.fb-open {
-      flex: 2 1 0; width: auto; min-width: 0;
+      flex: 0 0 13.333%; width: auto; min-width: 0;
       border-right-width: 1px;
     }
 
@@ -363,7 +363,7 @@
 
     /* ══ 右栏 ════════════════════════════════════════════════ */
     .right {
-      flex: 9 1 0; min-width: 0;
+      flex: 1 1 0; min-width: 0;
       background: #fff;
       display: flex; flex-direction: column;
       overflow: hidden;
