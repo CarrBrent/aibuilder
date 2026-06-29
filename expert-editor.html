@@ -132,6 +132,21 @@
       font-size: 13px; font-weight: 700; color: #1f2329;
       margin-bottom: 10px;
     }
+    /* 思考 / 反馈过程行 */
+    .think-head { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:#1f2329; margin:2px 0 8px; }
+    .think-head i { color:#6366f1; font-size:12px; }
+    .think-line {
+      display:flex; align-items:flex-start; gap:8px;
+      font-size:12.5px; color:#687083; line-height:1.6; padding:3px 0;
+    }
+    .think-line .think-ic { width:14px; flex-shrink:0; text-align:center; font-size:11px; margin-top:2px; }
+    .think-line .think-ic.done { color:#16a34a; }
+    .think-line .think-ic.run  { color:#6366f1; }
+    .think-line.feedback { color:#1f2329; }
+    .think-line.feedback .think-ic { color:#16a34a; }
+    .think-line .fb-q { color:#9aa1af; }
+    .think-line .fb-a { font-weight:600; color:#1f2329; }
+    .think-divider { height:1px; background:#f0f1f5; margin:12px 0; }
     .ability-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 16px; }
     .ability-h {
       font-size: 13px; font-weight: 600; color: #1f2329;
@@ -1132,7 +1147,7 @@
     <!-- 摘要条 -->
     <div class="summary-bar" id="previewSummary" style="display:none">
       <button class="summary-back"><i class="fas fa-chevron-left"></i></button>
-      <div class="summary-text">员工培训专家创建 · 第 1 步：确认培训需求关键信息</div>
+      <div class="summary-text">员工培训专家 · 预览（直接对话即可使用）</div>
       <div class="summary-ai-tag">对话由 AI 生成</div>
     </div>
 
@@ -1676,9 +1691,46 @@
     }
   }
 
-  // ══ 左栏完成后切换右栏 ═════════════════════════════════════
-  // 第一步：先抛澄清问题，用户在输入框顶部选择后才生成专家内容
-  function showPreview() {
+  // ══ 左栏生成过程编排 ═══════════════════════════════════════
+  // 左栏 = 生成专家的过程：思考 → 弹问题 → 反馈 → 继续生成 → 完成
+  // 右栏 = 专家预览（使用该专家的对话框）：生成完成后展示核心能力 + 触发方式
+
+  // 左栏追加一行思考/反馈
+  function leftAppend(html) {
+    const d = document.createElement('div');
+    d.innerHTML = html;
+    while (d.firstChild) leftStream.appendChild(d.firstChild);
+    leftContent.scrollTop = leftContent.scrollHeight;
+  }
+
+  // 阶段一：思考（到第一步结束，再弹问题）
+  const THINK_STEPS = [
+    '解析需求：创建一位「员工培训专家」',
+    '拆解专家职责：需求诊断 / 课程设计 / 实施跟踪',
+    '规划可编排的技能与知识库模块',
+    '识别关键信息缺口，需要向你确认',
+  ];
+  function streamThinking(done) {
+    leftAppend('<div class="think-head"><i class="fas fa-brain"></i> 正在思考</div>');
+    let i = 0;
+    (function nextStep() {
+      if (i >= THINK_STEPS.length) { setTimeout(done, 300); return; }
+      const last = i === THINK_STEPS.length - 1;
+      leftAppend(`<div class="think-line"><span class="think-ic ${last ? 'run' : 'done'}"><i class="fas ${last ? 'fa-circle-notch fa-spin' : 'fa-check'}"></i></span><span>${THINK_STEPS[i]}</span></div>`);
+      i++;
+      setTimeout(nextStep, 520);
+    })();
+  }
+
+  // 阶段三：答案确认后，继续生成左栏专家内容，完成后切右栏预览
+  function continueGeneration() {
+    leftAppend('<div class="think-divider"></div>');
+    leftAppend('<div class="think-head"><i class="fas fa-cog fa-spin"></i> 继续生成专家内容</div>');
+    setTimeout(() => { runBlocks(0, showRightPreview); }, 500);
+  }
+
+  // 阶段四：右栏 = 专家预览（使用该专家的对话框）
+  function showRightPreview() {
     clearInterval(tipsInterval);
     const tipsPanel = document.getElementById('tipsPanel');
     tipsPanel.style.transition = 'opacity .4s ease';
@@ -1688,15 +1740,13 @@
       document.getElementById('previewSummary').style.display = '';
       document.getElementById('previewMessages').style.display = '';
       document.getElementById('previewInputArea').style.display = '';
-      // 用户原始诉求
-      addUserMsg('帮我创建一个员工培训专家，能根据岗位设计培训方案');
-      // AI 先确认关键信息，再生成
-      addAiMsg(`
-        <p>好的，我来帮你打造一位<strong>员工培训专家</strong> 🎓。</p>
-        <p>在生成之前，我需要先和你确认几个关键问题，以便专家的产出更贴合你的实际场景。请在下方<strong>逐题选择</strong>，全部确认后我会立即开始生成。</p>
-      `, false);
-      startClarify();
+      generateExpert();   // 右栏展示专家核心能力 + 提问触发方式
     }, 400);
+  }
+
+  // 启动：先思考，思考第一步结束后弹出问题
+  function startExpertFlow() {
+    streamThinking(() => startClarify());
   }
 
   // ══ 澄清问题引擎 ═══════════════════════════════════════════
@@ -1712,12 +1762,6 @@
       sub: '可多选，决定专家编排哪些技能',
       multi: true,
       options: ['需求诊断', '课程体系设计', '培训计划排期', '考核与评估', '效果跟踪复盘'],
-    },
-    {
-      title: '主要采用哪种培训形式？',
-      sub: '影响课程形式与资料推荐',
-      multi: true,
-      options: ['线上课程', '线下集训', '导师带教', '实战演练'],
     },
     {
       title: '培训成果如何衡量？',
@@ -1792,14 +1836,19 @@
       if (extra) chosen.push(extra);
       if (!chosen.length) return;
       clarifyAnswers.push({ q: q.title, a: chosen });
-      addUserMsg(chosen.join('、'));
+      // 答案在左栏内反馈
+      if (clarifyIdx === 0) {
+        leftAppend('<div class="think-divider"></div>');
+        leftAppend('<div class="think-head"><i class="fas fa-clipboard-check"></i> 已收集你的确认</div>');
+      }
+      leftAppend(`<div class="think-line feedback"><span class="think-ic"><i class="fas fa-check"></i></span><span><span class="fb-q">${q.title}</span><br><span class="fb-a">${chosen.join('、')}</span></span></div>`);
       clarifyIdx++;
       if (clarifyIdx < CLARIFY_QS.length) {
         setTimeout(renderClarify, 200);
       } else {
         clarifyBar.style.display = 'none';
         clarifyBar.innerHTML = '';
-        generateExpert();
+        continueGeneration();   // 反馈后继续生成
       }
     }
     sendBtn.addEventListener('click', submit);
@@ -1813,28 +1862,24 @@
     const objMap = { '需求诊断':'培训需求诊断','课程体系设计':'课程体系规划','培训计划排期':'培训计划排期','考核与评估':'考核与效果评估','效果跟踪复盘':'效果跟踪复盘' };
     const aud = (clarifyAnswers[0]?.a || ['全员通用'])[0];
     const stages = (clarifyAnswers[1]?.a || []).map(x => objMap[x] || x);
-    const forms = (clarifyAnswers[2]?.a || []).join('、');
-    const metric = (clarifyAnswers[3]?.a || ['行为改变与绩效提升'])[0];
+    const metric = (clarifyAnswers[2]?.a || ['行为改变与绩效提升'])[0];
+    // 右栏 = 使用该专家的对话框：开场介绍核心能力 + 提问触发方式
     addAiMsg(`
-      <h1>员工培训专家 · 已生成</h1>
-      <p>已根据你的确认信息完成<strong>员工培训专家</strong>的配置：</p>
-      <h2>专家定位</h2>
-      <p>面向<strong>${aud}</strong>的培训管理专家，从需求诊断到效果评估全流程协同，让培训方案可落地、可衡量。</p>
-      <h2>覆盖环节</h2>
+      <h1>员工培训专家</h1>
+      <p>你好 👋 我是为<strong>${aud}</strong>打造的<strong>员工培训专家</strong>，可以直接用自然语言向我提需求。</p>
+      <h2>核心能力</h2>
       <ul>
         ${(stages.length ? stages : ['培训需求诊断','课程体系规划','考核与效果评估']).map(s => `<li><strong>${s}</strong></li>`).join('')}
+        <li>以<strong>${metric}</strong>为口径，自动追踪完成情况并预警未达标人员</li>
       </ul>
-      <h2>培训形式</h2>
-      <p>${forms || '线上课程 + 导师带教'}</p>
-      <h2>成果衡量</h2>
-      <p>以<strong>${metric}</strong>作为核心评估口径，自动追踪完成情况并预警未达标人员。</p>
-      <h2>触发方式</h2>
+      <h2>提问触发方式</h2>
+      <p>当你有以下需求时，直接发消息即可触发：</p>
       <ul>
         <li>"为 10 名新入职客服设计一套两周入职培训计划"</li>
         <li>"给销售团队做一份产品知识考核试卷"</li>
         <li>"分析这次培训的完成率，列出未达标名单"</li>
       </ul>
-      <p>只要你的需求涉及<em>员工能力提升与培训管理</em>，这位专家就会自动介入。</p>
+      <p>只要你的需求涉及<em>员工能力提升与培训管理</em>，我就会自动介入。试着在下方输入你的第一个培训需求吧。</p>
     `, true);
   }
 
@@ -1889,7 +1934,7 @@
   });
 
   // 启动流式渲染
-  runBlocks(0, showPreview);
+  startExpertFlow();
 
   // 确认按钮：保存并跳转我的技能
   document.getElementById('btnConfirmPublish').addEventListener('click', () => {
