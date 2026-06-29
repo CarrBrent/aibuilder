@@ -496,37 +496,57 @@
     }
     .preview-send.active { background: #111827; }
 
-    /* ══ 第一步：澄清问题选项栏（输入框顶部）═══════════════════ */
-    .clarify-bar {
-      border: 1px solid #e3e6ee; border-radius: 12px;
-      background: #fafbfc; padding: 12px 14px; margin-bottom: 10px;
+    /* ══ 第一步：澄清问题卡片（左侧输入框上方，参考截图样式）══════ */
+    .clarify-card {
+      margin: 0 14px 10px; border: 1px solid #ebedf2; border-radius: 16px;
+      background: #fff; box-shadow: 0 6px 24px rgba(16,16,20,.08);
+      overflow: hidden;
     }
-    .clarify-progress { font-size: 11px; color: #9aa1af; margin-bottom: 8px; }
-    .clarify-q-title { font-size: 13px; font-weight: 700; color: #1f2329; margin-bottom: 3px; }
-    .clarify-q-sub { font-size: 11.5px; color: #9aa1af; margin-bottom: 10px; }
-    .clarify-options { display: flex; flex-wrap: wrap; gap: 8px; }
+    .clarify-hd {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px 10px;
+    }
+    .clarify-q { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: #1f2329; line-height: 1.45; }
+    .clarify-pager { display: flex; align-items: center; gap: 8px; flex-shrink: 0; color: #9aa1af; font-size: 12px; }
+    .clarify-pager i { cursor: pointer; font-size: 11px; color: #c0c5d0; }
+    .clarify-pager i:hover { color: #1f2329; }
+    .clarify-close { flex-shrink: 0; border: none; background: transparent; cursor: pointer; color: #9aa1af; font-size: 14px; padding: 2px; }
+    .clarify-close:hover { color: #1f2329; }
+    .clarify-opts { display: flex; flex-direction: column; }
     .clarify-opt {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 7px 13px; border-radius: 8px;
-      border: 1px solid #e3e6ee; background: #fff;
-      font-size: 12.5px; color: #4f555f; cursor: pointer;
-      transition: all .12s; user-select: none;
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-top: 1px solid #f2f3f6;
+      cursor: pointer; transition: background .1s; user-select: none;
     }
-    .clarify-opt:hover { border-color: #b9c0cf; }
-    .clarify-opt .clarify-tick { font-size: 10px; opacity: 0; transition: opacity .1s; }
-    .clarify-opt.selected {
-      border-color: #111827; background: #111827; color: #fff; font-weight: 600;
+    .clarify-opt:hover { background: #f7f8fa; }
+    .clarify-idx {
+      width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+      background: #f2f3f6; color: #6b7280; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
     }
-    .clarify-opt.selected .clarify-tick { opacity: 1; }
-    .clarify-footer { display: flex; align-items: center; margin-top: 12px; gap: 10px; }
-    .clarify-hint-text { font-size: 11px; color: #b0b6c2; }
-    .clarify-next {
-      margin-left: auto; padding: 7px 18px; border-radius: 8px; border: none;
-      background: #e3e6ee; color: #9aa1af; font-size: 12.5px; font-weight: 600;
-      cursor: not-allowed; transition: all .12s;
+    .clarify-opt.selected .clarify-idx { background: #18181B; color: #fff; }
+    .clarify-opt-label { flex: 1; font-size: 14px; color: #1f2329; }
+    .clarify-opt.selected .clarify-opt-label { font-weight: 600; }
+    .clarify-opt .clarify-opt-tick { color: #18181B; font-size: 12px; opacity: 0; }
+    .clarify-opt.selected .clarify-opt-tick { opacity: 1; }
+    /* 其他补充 行 */
+    .clarify-other { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1px solid #f2f3f6; }
+    .clarify-other .clarify-idx { background: #f2f3f6; color: #9aa1af; }
+    .clarify-other input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 14px; color: #1f2329; font-family: inherit;
     }
-    .clarify-next.ready { background: #111827; color: #fff; cursor: pointer; }
-    .clarify-next.ready:hover { background: #1f2d3d; }
+    .clarify-other input::placeholder { color: #c0c5d0; }
+    /* 底部发送 */
+    .clarify-ft { display: flex; align-items: center; padding: 10px 16px 14px; }
+    .clarify-send {
+      margin-left: auto; width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: #18181B; color: #fff; font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .12s, opacity .12s;
+    }
+    .clarify-send:hover { background: #000; }
+    .clarify-send:disabled { opacity: .35; cursor: not-allowed; }
 
     /* ══ Tips 轮播面板 ════════════════════════════════════════ */
     .tips-panel {
@@ -969,6 +989,9 @@
 
     </div>
 
+    <!-- 第一步：澄清问题卡片（输出在左侧输入框上方） -->
+    <div class="clarify-card" id="clarifyBar" style="display:none"></div>
+
     <!-- 左下 AI 对话输入 -->
     <div class="left-chat">
       <div class="chat-hint">欢迎使用专家工坊，可以在此输入你的要求。</div>
@@ -1132,8 +1155,6 @@
 
     <!-- 输入框 -->
     <div class="preview-input-area" id="previewInputArea" style="display:none">
-      <!-- 第一步：澄清问题选项栏（用户选完才生成专家内容） -->
-      <div class="clarify-bar" id="clarifyBar" style="display:none"></div>
       <div class="preview-input-box">
         <textarea class="preview-textarea" id="previewInput" placeholder="发送消息…"></textarea>
         <div class="preview-input-bottom">
@@ -1728,19 +1749,36 @@
     const picked = new Set();
     clarifyBar.style.display = 'block';
     clarifyBar.innerHTML = `
-      <div class="clarify-progress">第 ${clarifyIdx + 1} / ${CLARIFY_QS.length} 个问题 · ${q.multi ? '可多选' : '单选'}</div>
-      <div class="clarify-q-title">${q.title}</div>
-      <div class="clarify-q-sub">${q.sub}</div>
-      <div class="clarify-options" id="clarifyOptions">
-        ${q.options.map((o, i) => `<div class="clarify-opt" data-i="${i}"><i class="fas fa-check clarify-tick"></i>${o}</div>`).join('')}
+      <div class="clarify-hd">
+        <div class="clarify-q">${q.title}</div>
+        <div class="clarify-pager">
+          <i class="fas fa-chevron-left" id="clarifyPrev"></i>
+          <span>${clarifyIdx + 1}/${CLARIFY_QS.length}</span>
+          <i class="fas fa-chevron-right" id="clarifyFwd"></i>
+        </div>
+        <button class="clarify-close" id="clarifyClose"><i class="fas fa-times"></i></button>
       </div>
-      <div class="clarify-footer">
-        <span class="clarify-hint-text">${q.multi ? '选择一项或多项' : '请选择一项'}</span>
-        <button class="clarify-next" id="clarifyNext">${clarifyIdx === CLARIFY_QS.length - 1 ? '开始生成' : '下一步'}</button>
+      <div class="clarify-opts">
+        ${q.options.map((o, i) => `
+          <div class="clarify-opt" data-i="${i}">
+            <span class="clarify-idx">${i + 1}</span>
+            <span class="clarify-opt-label">${o}</span>
+            <i class="fas fa-check clarify-opt-tick"></i>
+          </div>`).join('')}
+      </div>
+      <div class="clarify-other">
+        <span class="clarify-idx"><i class="fas fa-pen" style="font-size:10px"></i></span>
+        <input type="text" id="clarifyOther" placeholder="其他补充…"/>
+      </div>
+      <div class="clarify-ft">
+        <button class="clarify-send" id="clarifySend" disabled><i class="fas fa-arrow-up"></i></button>
       </div>`;
+
     const optsEl = clarifyBar.querySelectorAll('.clarify-opt');
-    const nextBtn = document.getElementById('clarifyNext');
-    const syncNext = () => nextBtn.classList.toggle('ready', picked.size > 0);
+    const otherInput = document.getElementById('clarifyOther');
+    const sendBtn = document.getElementById('clarifySend');
+    const syncSend = () => { sendBtn.disabled = !(picked.size > 0 || otherInput.value.trim()); };
+
     optsEl.forEach(el => el.addEventListener('click', () => {
       const i = +el.dataset.i;
       if (q.multi) {
@@ -1751,11 +1789,22 @@
         optsEl.forEach(e => e.classList.remove('selected'));
         el.classList.add('selected');
       }
-      syncNext();
+      syncSend();
     }));
-    nextBtn.addEventListener('click', () => {
-      if (!picked.size) return;
+    otherInput.addEventListener('input', syncSend);
+
+    document.getElementById('clarifyPrev').addEventListener('click', () => {
+      if (clarifyIdx > 0) { clarifyIdx--; clarifyAnswers.pop(); renderClarify(); }
+    });
+    document.getElementById('clarifyClose').addEventListener('click', () => {
+      clarifyBar.style.display = 'none'; clarifyBar.innerHTML = '';
+    });
+
+    function submit() {
       const chosen = [...picked].map(i => q.options[i]);
+      const extra = otherInput.value.trim();
+      if (extra) chosen.push(extra);
+      if (!chosen.length) return;
       clarifyAnswers.push({ q: q.title, a: chosen });
       addUserMsg(chosen.join('、'));
       clarifyIdx++;
@@ -1766,7 +1815,10 @@
         clarifyBar.innerHTML = '';
         generateExpert();
       }
-    });
+    }
+    sendBtn.addEventListener('click', submit);
+    document.getElementById('clarifyFwd').addEventListener('click', submit);
+    otherInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!sendBtn.disabled) submit(); } });
   }
   function startClarify() { clarifyIdx = 0; clarifyAnswers.length = 0; renderClarify(); }
 
