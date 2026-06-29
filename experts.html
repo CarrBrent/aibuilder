@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>我的专家 — Skill Builder</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <style>
+    .page-shell { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .page-header {
+      height:52px; background:#fff; border-bottom:1px solid #EBEBEF;
+      display:flex; align-items:center; padding:0 24px; gap:12px; flex-shrink:0;
+    }
+    .page-title { font-size:16px; font-weight:700; color:#1A1A1E; }
+    .header-search {
+      display:flex; align-items:center; gap:8px;
+      background:#F5F6F8; border:1px solid #EBEBEF; border-radius:8px;
+      padding:7px 12px; width:220px; transition:border-color .15s;
+    }
+    .header-search:focus-within { border-color:#18181B; background:#fff; }
+    .header-search i { color:#9A9AAB; font-size:13px; }
+    .header-search input { border:none; outline:none; background:transparent; font-size:13px; color:#1A1A1E; flex:1; }
+    .header-search input::placeholder { color:#C0C5D0; }
+    .header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .btn-primary {
+      padding:8px 16px; border-radius:8px; background:#18181B; color:#fff;
+      font-size:13px; font-weight:600; border:none; cursor:pointer; text-decoration:none;
+      display:inline-flex; align-items:center; gap:6px; transition:background .12s;
+    }
+    .btn-primary:hover { background:#3F3F46; }
+    .btn-ghost {
+      padding:8px 14px; border-radius:8px; background:#fff; color:#4F555F;
+      font-size:13px; font-weight:500; border:1px solid #EBEBEF; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; transition:all .12s;
+    }
+    .btn-ghost:hover { background:#F5F6F8; }
+    .page-body { flex:1; overflow-y:auto; padding:20px 24px 24px; }
+
+    /* 筛选栏 */
+    .filter-row { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+    .filter-tabs { display:flex; gap:0; border-bottom:2px solid #EBEBEF; }
+    .filter-tab {
+      padding:6px 16px 8px; font-size:13px; font-weight:500; color:#9A9AAB;
+      cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;
+      transition:all .12s; white-space:nowrap;
+    }
+    .filter-tab:hover { color:#1A1A1E; }
+    .filter-tab.active { color:#18181B; font-weight:700; border-bottom-color:#18181B; }
+    .filter-count { font-size:10px; background:#F5F6F8; color:#6B6B80; padding:1px 6px; border-radius:9999px; margin-left:4px; }
+    .sort-select {
+      margin-left:auto; padding:6px 10px; border-radius:8px; border:1px solid #EBEBEF; background:#fff;
+      font-size:13px; color:#4F555F; cursor:pointer; outline:none;
+    }
+
+    /* 专家卡片 Grid —— 对齐技能列表样式 */
+    .skills-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    .sk-card {
+      background:#fff; border:1px solid #EBEBEF; border-radius:12px;
+      display:flex; flex-direction:column; padding:16px;
+      cursor:pointer; transition:box-shadow .15s, border-color .15s;
+    }
+    .sk-card:hover { border-color:#18181B; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+    .sk-top { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+    .sk-icon {
+      width:44px; height:44px; border-radius:10px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:20px;
+      background:#F5F6F8; overflow:hidden;
+    }
+    .sk-icon img { width:100%; height:100%; object-fit:cover; }
+    .sk-meta { flex:1; min-width:0; }
+    .sk-name { font-size:13px; font-weight:700; color:#1A1A1E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
+    .sk-platform { display:inline-block; font-size:10px; color:#52525B; background:#F4F4F5; border-radius:4px; padding:1px 6px; font-weight:600; }
+    .sk-status-row { display:flex; align-items:center; gap:6px; margin-top:5px; }
+    .sk-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .sk-dot.published { background:#16A34A; }
+    .sk-dot.draft { background:#9A9AAB; }
+    .sk-dot.review { background:#F59E0B; }
+    .sk-dot.failed { background:#DC2626; }
+    .sk-status-text { font-size:11px; color:#6B6B80; }
+    .sk-ver { font-size:11px; color:#9A9AAB; margin-left:2px; }
+    .sk-desc {
+      font-size:12px; color:#6B6B80; line-height:1.6;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+      margin-bottom:12px; flex:1;
+    }
+    .sk-skills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; }
+    .sk-skill-tag {
+      font-size:10px; color:#4F555F; background:#F5F6F8; border:1px solid #EBEBEF;
+      border-radius:6px; padding:2px 7px; white-space:nowrap;
+    }
+    .sk-actions { display:flex; gap:8px; }
+    .sk-btn {
+      flex:1; padding:6px 0; border-radius:7px; font-size:12px; font-weight:600;
+      cursor:pointer; text-align:center; border:1px solid #EBEBEF; background:#fff; color:#4F555F;
+      transition:all .12s;
+    }
+    .sk-btn:hover { background:#F5F6F8; }
+    .sk-btn.danger { color:#DC2626; border-color:#FECACA; }
+    .sk-btn.danger:hover { background:#FEF2F2; }
+    .sk-btn.primary { background:#18181B; color:#fff; border-color:#18181B; }
+    .sk-btn.primary:hover { background:#3F3F46; }
+
+    /* 空状态 */
+    .empty-state {
+      grid-column:1/-1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:60px 24px; color:#9A9AAB; text-align:center;
+    }
+    .empty-state i { font-size:40px; margin-bottom:14px; color:#D0D4E0; }
+    .empty-state p { font-size:14px; margin-bottom:16px; }
+
+    /* ── content toolbar ── */
+    .content-toolbar {
+      display:flex; align-items:center; gap:10px; margin-bottom:20px;
+    }
+    .content-toolbar .toolbar-search {
+      display:flex; align-items:center; gap:8px;
+      background:#fff; border:1px solid #eceef2; border-radius:8px;
+      padding:7px 12px; width:240px; transition:border-color .15s;
+    }
+    .content-toolbar .toolbar-search:focus-within { border-color:#bbb; }
+    .content-toolbar .toolbar-search i { color:#999; font-size:13px; }
+    .content-toolbar .toolbar-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
+    .content-toolbar .toolbar-search input::placeholder { color:#999; }
+    .content-toolbar .toolbar-end { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  </style>
+</head>
+<body>
+<div class="page-shell">
+  <div class="page-header">
+    <span class="page-title">我的专家</span>
+  </div>
+
+  <div class="page-body">
+    <div class="content-toolbar">
+      <div class="toolbar-search">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="搜索我的专家..."/>
+      </div>
+      <div class="toolbar-end">
+        <button class="btn-ghost"><i class="fas fa-file-import"></i> 导入专家</button>
+        <a href="create.html" class="btn-primary"><i class="fas fa-plus"></i> 新建专家</a>
+      </div>
+    </div>
+
+    <!-- 筛选 & 排序 -->
+    <div class="filter-row">
+      <div class="filter-tabs">
+        <div class="filter-tab active">全部 <span class="filter-count">8</span></div>
+        <div class="filter-tab">已上架 <span class="filter-count">6</span></div>
+        <div class="filter-tab">草稿 <span class="filter-count">1</span></div>
+        <div class="filter-tab">审核中 <span class="filter-count">1</span></div>
+      </div>
+      <select class="sort-select">
+        <option>最近修改</option>
+        <option>用量最高</option>
+        <option>评分最高</option>
+        <option>创建时间</option>
+      </select>
+    </div>
+
+    <!-- 卡片网格 -->
+    <div class="skills-grid">
+
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-icon">⚖️</div>
+          <div class="sk-meta">
+            <div class="sk-name">法务合规专家</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">资深企业法务顾问，精通劳动合同、采购合同的风险审查与合规建议，可调用多个技能协同完成合规审计任务</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">合同风险扫描</span>
+          <span class="sk-skill-tag">劳动合同合规</span>
+          <span class="sk-skill-tag">+2</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn danger">下架</button>
+        </div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-icon">💼</div>
+          <div class="sk-meta">
+            <div class="sk-name">人力资源专家</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v3</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">全流程 HR 助手，覆盖招聘、考勤、薪酬、绩效，结合多项技能为团队提供一站式人力资源决策支持</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">智能考勤检测</span>
+          <span class="sk-skill-tag">绩效考核校准</span>
+          <span class="sk-skill-tag">+3</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn danger">下架</button>
+        </div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-icon">📊</div>
+          <div class="sk-meta">
+            <div class="sk-name">财务分析专家</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">专注财务报表分析与审计，自动完成勾稽关系校验、审计底稿生成，并输出可视化分析结论</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">报表勾稽校验</span>
+          <span class="sk-skill-tag">审计底稿生成</span>
+          <span class="sk-skill-tag">+1</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn danger">下架</button>
+        </div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-icon">📝</div>
+          <div class="sk-meta">
+            <div class="sk-name">行政办公专家</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v1</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">高效办公助理，擅长会议纪要整理、PPT 制作与文档生成，帮助团队提升日常办公效率</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">会议纪要整理</span>
+          <span class="sk-skill-tag">PPT 生成器</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn danger">下架</button>
+        </div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-icon">📈</div>
+          <div class="sk-meta">
+            <div class="sk-name">数据可视化专家</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v2</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">将原始数据转化为生动的可视化图表，支持动态柱状图、趋势分析等多种展示形式</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">动态柱状图制作</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn danger">下架</button>
+        </div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-icon">🎯</div>
+          <div class="sk-meta">
+            <div class="sk-name">薪酬合规专家</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot published"></span><span class="sk-status-text">已上架</span><span class="sk-ver">v1</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">聚焦薪酬结构合规审计与个税校验，自动检查社保基数、加班费与最低工资标准的合规情况</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">薪酬合规审计</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn danger">下架</button>
+        </div>
+      </div>
+
+      <!-- 草稿 -->
+      <div class="sk-card" style="border-style:dashed;border-color:#D0D4E0">
+        <div class="sk-top">
+          <div class="sk-icon" style="background:#FEF3C7">🛠️</div>
+          <div class="sk-meta">
+            <div class="sk-name">采购管理专家（草稿）</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot draft"></span><span class="sk-status-text">草稿</span><span class="sk-ver">v1</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">面向采购全流程的智能助手，整合采购合同风险扫描与供应商评估能力，仍在配置中</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">采购合同风险扫描</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn primary">发布</button>
+          <button class="sk-btn danger">删除</button>
+        </div>
+      </div>
+
+      <!-- 审核中 -->
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-icon" style="background:#FEF3C7">🔬</div>
+          <div class="sk-meta">
+            <div class="sk-name">研发效能专家</div>
+            <span class="sk-platform">Skill Builder平台</span>
+            <div class="sk-status-row"><span class="sk-dot review"></span><span class="sk-status-text">审核中</span><span class="sk-ver">v1</span></div>
+          </div>
+        </div>
+        <div class="sk-desc">协助研发团队进行需求拆解、头脑风暴与方案评审，提升研发协作效率</div>
+        <div class="sk-skills">
+          <span class="sk-skill-tag">brainstorming</span>
+        </div>
+        <div class="sk-actions">
+          <button class="sk-btn">编辑</button>
+          <button class="sk-btn danger">撤回</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="sidebar.js"></script>
+<script>SkillBuilderSidebar.render('plugins');</script>
+<script>
+  document.querySelectorAll('.sk-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.sk-btn')) return;
+      window.location.href = 'create.html';
+    });
+  });
+</script>
+</body>
+</html>

@@ -9,7 +9,7 @@
       label: '项目',
       items: [
         { key: 'skills',    icon: 'fas fa-sliders-h',    label: '技能',   href: 'skills.html' },
-        { key: 'plugins',   icon: 'fas fa-user-tie',     label: '专家',   href: '#' },
+        { key: 'plugins',   icon: 'fas fa-user-tie',     label: '专家',   href: 'experts.html' },
         { key: 'connector', icon: 'fas fa-link',         label: '连接器', href: '#' },
         { key: 'prompt',    icon: 'fas fa-align-left',   label: '提示词', href: '#' },
       ],
