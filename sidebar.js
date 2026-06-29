@@ -202,7 +202,6 @@
       <div class="sb-logo">
         <img class="sb-logo-icon" src="assets/logo.png" alt="AIBuilder"/>
         <span class="sb-logo-text">AIBuilder</span>
-        <span class="sb-logo-tag">内部</span>
       </div>
       <a class="sb-nav-item ${activeKey === 'create' ? 'active' : ''}" href="create.html" style="margin:4px 8px 2px;border-radius:8px;background:#111;color:#fff;font-weight:600;">
         <i class="sb-icon fas fa-plus" style="color:#fff"></i>
