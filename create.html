@@ -723,6 +723,33 @@
     .btn-cancel:hover { background:#f5f6fa; border-color:#bbb; }
     .btn-confirm { padding:7px 16px; border-radius:20px; border:none; background:#111; font-size:13px; color:#fff; cursor:pointer; font-weight:600; }
     .btn-confirm:hover { opacity:.82; }
+
+    /* ── 知识库选择弹窗 ── */
+    .kb-modal-hd { display:flex; align-items:center; gap:10px; padding:16px 20px 14px; border-bottom:1px solid #eceef2; }
+    .kb-back { width:28px; height:28px; border-radius:8px; border:none; background:transparent; cursor:pointer; color:#666; font-size:13px; display:none; align-items:center; justify-content:center; flex-shrink:0; }
+    .kb-back:hover { background:#f5f6fa; color:#111; }
+    .kb-back.show { display:flex; }
+    .kb-hd-title { font-size:15px; font-weight:700; color:#111; flex:1; }
+    .kb-hd-sub { font-size:12px; color:#999; font-weight:400; margin-left:4px; }
+    .kb-search { display:flex; align-items:center; gap:8px; background:#f5f6fa; border:1px solid #eceef2; border-radius:8px; padding:8px 12px; margin:16px 20px 4px; }
+    .kb-search i { color:#999; font-size:13px; }
+    .kb-search input { border:none; outline:none; background:transparent; font-size:13px; color:#111; flex:1; }
+    .kb-search input::placeholder { color:#aaa; }
+    .kb-list { max-height:340px; overflow-y:auto; padding:8px 12px 16px; }
+    .kb-item { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:10px; cursor:pointer; transition:background .12s; }
+    .kb-item:hover { background:#f5f6fa; }
+    .kb-item-ic { width:38px; height:38px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:15px; }
+    .kb-item-ic.indigo { background:#EEF0FF; color:#4F46E5; }
+    .kb-item-ic.blue { background:#E8F1FF; color:#2563EB; }
+    .kb-item-ic.green { background:#E7F7EE; color:#16A34A; }
+    .kb-item-ic.amber { background:#FEF3C7; color:#B45309; }
+    .kb-item-ic.violet { background:#F3EEFF; color:#7C3AED; }
+    .kb-item-ic.rose { background:#FFEAEC; color:#E11D48; }
+    .kb-item-info { flex:1; min-width:0; }
+    .kb-item-name { font-size:13.5px; font-weight:600; color:#111; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .kb-item-meta { font-size:11.5px; color:#999; }
+    .kb-item-arrow { color:#ccc; font-size:12px; flex-shrink:0; }
+    .kb-empty { text-align:center; color:#aaa; font-size:13px; padding:40px 0; }
   </style>
 </head>
 <body>
@@ -812,6 +839,8 @@
               <div class="cw-dropdown" id="cwDropdown">
                 <div class="cw-dropdown-item" id="cwAddLocal"><i class="fas fa-file"></i> 本地文件</div>
                 <div class="cw-dropdown-item" id="cwAddDoc"><i class="fas fa-book-open"></i> JoySpace 文档</div>
+                <div class="cw-dropdown-item" id="cwAddJoyclaw"><i class="fas fa-database"></i> JoyClaw 知识库</div>
+                <div class="cw-dropdown-item" id="cwAddJoyagent"><i class="fas fa-layer-group"></i> JoyAgent 知识库</div>
                 <div class="cw-dropdown-item" id="cwAddCli"><i class="fas fa-terminal"></i> CLI</div>
               </div>
             </div>
@@ -1079,6 +1108,22 @@
   </div>
 </div>
 
+<!-- 知识库选择弹窗（JoyClaw / JoyAgent 共用） -->
+<div class="modal-mask hidden" id="kbModal">
+  <div class="modal-box">
+    <div class="kb-modal-hd">
+      <button class="kb-back" id="kbBack"><i class="fas fa-arrow-left"></i></button>
+      <span class="kb-hd-title" id="kbTitle">选择知识库</span>
+      <button class="modal-close" id="kbClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="kb-search">
+      <i class="fas fa-search"></i>
+      <input type="text" id="kbSearch" placeholder="搜索..."/>
+    </div>
+    <div class="kb-list" id="kbList"></div>
+  </div>
+</div>
+
 
 <script src="sidebar.js"></script>
 <script>SkillBuilderSidebar.render('create');</script>
@@ -1257,6 +1302,102 @@ document.getElementById('cwAddLocal').addEventListener('click',()=>{ dd.classLis
 document.getElementById('cwLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ ta.value+=(ta.value?'\n':'')+'[附件：'+f.name+']'; syncUI(); } e.target.value=''; });
 document.getElementById('cwAddDoc').addEventListener('click',()=>{ dd.classList.remove('open'); ta.value+=(ta.value?'\n':'')+'[JoySpace 文档：技能设计规范.docx]'; syncUI(); });
 document.getElementById('cwAddCli').addEventListener('click',()=>{ dd.classList.remove('open'); ta.value+=(ta.value?'\n':'')+'[CLI 引用已添加]'; syncUI(); });
+
+// ══════════════════════════════════════════════════════════
+// 知识库选择（JoyClaw：直接选库 / JoyAgent：先选空间再选库）
+// ══════════════════════════════════════════════════════════
+const kbModal=document.getElementById('kbModal');
+const kbList=document.getElementById('kbList');
+const kbTitle=document.getElementById('kbTitle');
+const kbBack=document.getElementById('kbBack');
+const kbSearch=document.getElementById('kbSearch');
+
+// 模拟数据
+const JOYCLAW_KBS=[
+  {name:'产品需求文档库',meta:'128 篇文档 · 更新于 2 天前',ic:'fa-box',cls:'indigo'},
+  {name:'技术架构知识库',meta:'86 篇文档 · 更新于 5 天前',ic:'fa-sitemap',cls:'blue'},
+  {name:'客户案例库',meta:'52 篇文档 · 更新于 1 周前',ic:'fa-user-friends',cls:'green'},
+  {name:'法务合规库',meta:'34 篇文档 · 更新于 3 天前',ic:'fa-gavel',cls:'amber'},
+  {name:'运营策略库',meta:'41 篇文档 · 更新于 昨天',ic:'fa-bullhorn',cls:'rose'},
+];
+const JOYAGENT_SPACES=[
+  {name:'头脑风暴团队',meta:'6 个知识库',ic:'fa-users',cls:'indigo',kbs:[
+    {name:'创意灵感库',meta:'73 篇文档',ic:'fa-lightbulb',cls:'amber'},
+    {name:'竞品分析库',meta:'45 篇文档',ic:'fa-chart-bar',cls:'blue'},
+    {name:'用户调研库',meta:'61 篇文档',ic:'fa-comments',cls:'green'},
+  ]},
+  {name:'研发中心',meta:'9 个知识库',ic:'fa-code',cls:'blue',kbs:[
+    {name:'API 文档库',meta:'120 篇文档',ic:'fa-plug',cls:'indigo'},
+    {name:'代码规范库',meta:'38 篇文档',ic:'fa-file-code',cls:'violet'},
+    {name:'故障复盘库',meta:'27 篇文档',ic:'fa-bug',cls:'rose'},
+  ]},
+  {name:'市场营销部',meta:'5 个知识库',ic:'fa-bullhorn',cls:'rose',kbs:[
+    {name:'品牌资产库',meta:'56 篇文档',ic:'fa-palette',cls:'violet'},
+    {name:'活动方案库',meta:'33 篇文档',ic:'fa-calendar-alt',cls:'green'},
+  ]},
+];
+
+let kbMode=null;        // 'joyclaw' | 'joyagent'
+let kbStage=null;       // 'space' | 'kb'
+let kbCurSpace=null;
+
+function kbRenderRows(rows,onClick,arrow){
+  const q=(kbSearch.value||'').trim().toLowerCase();
+  const filtered=rows.filter(r=>!q||r.name.toLowerCase().includes(q));
+  if(!filtered.length){ kbList.innerHTML='<div class="kb-empty">没有匹配的结果</div>'; return; }
+  kbList.innerHTML=filtered.map((r,i)=>`
+    <div class="kb-item" data-i="${rows.indexOf(r)}">
+      <div class="kb-item-ic ${r.cls}"><i class="fas ${r.ic}"></i></div>
+      <div class="kb-item-info">
+        <div class="kb-item-name">${r.name}</div>
+        <div class="kb-item-meta">${r.meta}</div>
+      </div>
+      ${arrow?'<i class="fas fa-chevron-right kb-item-arrow"></i>':''}
+    </div>`).join('');
+  kbList.querySelectorAll('.kb-item').forEach(el=>{
+    el.addEventListener('click',()=>onClick(rows[+el.dataset.i]));
+  });
+}
+
+function kbShowJoyclaw(){
+  kbStage='kb'; kbBack.classList.remove('show');
+  kbTitle.innerHTML='选择 JoyClaw 知识库';
+  kbSearch.placeholder='搜索知识库...'; kbSearch.value='';
+  kbRenderRows(JOYCLAW_KBS,kb=>kbPick(kb.name),false);
+}
+function kbShowSpaces(){
+  kbStage='space'; kbCurSpace=null; kbBack.classList.remove('show');
+  kbTitle.innerHTML='选择团队空间 <span class="kb-hd-sub">JoyAgent 知识库</span>';
+  kbSearch.placeholder='搜索团队空间...'; kbSearch.value='';
+  kbRenderRows(JOYAGENT_SPACES,sp=>kbEnterSpace(sp),true);
+}
+function kbEnterSpace(sp){
+  kbStage='kb'; kbCurSpace=sp; kbBack.classList.add('show');
+  kbTitle.innerHTML=`选择知识库 <span class="kb-hd-sub">${sp.name}</span>`;
+  kbSearch.placeholder='搜索知识库...'; kbSearch.value='';
+  kbRenderRows(sp.kbs,kb=>kbPick(`${sp.name} / ${kb.name}`),false);
+}
+function kbPick(label){
+  const prefix=kbMode==='joyclaw'?'JoyClaw 知识库':'JoyAgent 知识库';
+  ta.value+=(ta.value?'\n':'')+`[${prefix}：${label}]`; syncUI();
+  kbCloseModal();
+}
+function kbOpen(mode){
+  kbMode=mode; kbModal.classList.remove('hidden');
+  if(mode==='joyclaw') kbShowJoyclaw(); else kbShowSpaces();
+}
+function kbCloseModal(){ kbModal.classList.add('hidden'); }
+
+document.getElementById('cwAddJoyclaw').addEventListener('click',()=>{ dd.classList.remove('open'); kbOpen('joyclaw'); });
+document.getElementById('cwAddJoyagent').addEventListener('click',()=>{ dd.classList.remove('open'); kbOpen('joyagent'); });
+document.getElementById('kbClose').addEventListener('click',kbCloseModal);
+kbModal.addEventListener('click',e=>{ if(e.target===kbModal) kbCloseModal(); });
+kbBack.addEventListener('click',()=>{ if(kbMode==='joyagent'&&kbStage==='kb') kbShowSpaces(); });
+kbSearch.addEventListener('input',()=>{
+  if(kbMode==='joyclaw') kbRenderRows(JOYCLAW_KBS,kb=>kbPick(kb.name),false);
+  else if(kbStage==='space') kbRenderRows(JOYAGENT_SPACES,sp=>kbEnterSpace(sp),true);
+  else kbRenderRows(kbCurSpace.kbs,kb=>kbPick(`${kbCurSpace.name} / ${kb.name}`),false);
+});
 
 // ZIP
 const zipModal=document.getElementById('zipModal');
