@@ -205,7 +205,7 @@
       </div>
       <a class="sb-nav-item ${activeKey === 'create' ? 'active' : ''}" href="create.html" style="margin:4px 8px 2px;border-radius:8px;background:#111;color:#fff;font-weight:600;">
         <i class="sb-icon fas fa-plus" style="color:#fff"></i>
-        <span>创建</span>
+        <span>新建任务</span>
       </a>
       ${navGroupsHTML}
       <div class="sb-bottom">
