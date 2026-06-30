@@ -1206,6 +1206,21 @@
   </div>
 </div>
 
+<!-- CLI 选择弹窗 -->
+<div class="modal-mask hidden" id="cliModal">
+  <div class="modal-box">
+    <div class="kb-modal-hd">
+      <span class="kb-hd-title">选择 CLI 工具</span>
+      <button class="modal-close" id="cliClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="kb-search">
+      <i class="fas fa-search"></i>
+      <input type="text" id="cliSearch" placeholder="搜索 CLI 工具..."/>
+    </div>
+    <div class="kb-list" id="cliList"></div>
+  </div>
+</div>
+
 
 <script src="sidebar.js"></script>
 <script>SkillBuilderSidebar.render('create');</script>
@@ -1431,7 +1446,7 @@ window.addEventListener('resize',()=>{ if(dd.classList.contains('open')) positio
 document.getElementById('cwAddLocal').addEventListener('click',()=>{ dd.classList.remove('open'); document.getElementById('cwLocalFile').click(); });
 document.getElementById('cwLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ cwChipMgr.add('fa-file', f.name); } e.target.value=''; });
 document.getElementById('cwAddDoc').addEventListener('click',()=>{ dd.classList.remove('open'); cwChipMgr.add('fa-book-open','技能设计规范.docx'); });
-document.getElementById('cwAddCli').addEventListener('click',()=>{ dd.classList.remove('open'); cwChipMgr.add('fa-terminal','CLI'); });
+document.getElementById("cwAddCli").addEventListener("click",()=>{ dd.classList.remove("open"); cliOpen(cwChipMgr); });
 
 // ══════════════════════════════════════════════════════════
 // 知识库选择（JoyClaw：直接选库 / JoyAgent：先选空间再选库）
@@ -1546,6 +1561,74 @@ kbSearch.addEventListener('input',()=>{
   else kbRenderRows(kbCurSpace.kbs,kb=>kbPick(`${kbCurSpace.name} / ${kb.name}`),false);
 });
 
+
+// ══════════════════════════════════════════════════════════
+// CLI 选择
+// ══════════════════════════════════════════════════════════
+const CLI_TOOLS = [
+  { name: "git", desc: "分布式版本控制系统",        icon: "fa-code-branch", cls: "amber" },
+  { name: "docker", desc: "容器化应用管理工具",      icon: "fa-cubes",      cls: "blue" },
+  { name: "kubectl", desc: "Kubernetes 集群管理工具", icon: "fa-cubes",      cls: "indigo" },
+  { name: "aws", desc: "AWS 云服务命令行",          icon: "fa-cloud",      cls: "amber" },
+  { name: "gcloud", desc: "Google Cloud CLI",      icon: "fa-cloud",      cls: "blue" },
+  { name: "npm", desc: "Node.js 包管理器",         icon: "fa-box",        cls: "rose" },
+  { name: "yarn", desc: "快速可靠的包管理器",        icon: "fa-box",        cls: "blue" },
+  { name: "npx", desc: "Node.js 包执行器",         icon: "fa-play",       cls: "violet" },
+  { name: "pnpm", desc: "高性能包管理器",            icon: "fa-bolt",       cls: "amber" },
+  { name: "helm", desc: "Kubernetes 包管理器",      icon: "fa-anchor",     cls: "indigo" },
+  { name: "terraform", desc: "基础设施即代码工具",   icon: "fa-cubes",      cls: "violet" },
+  { name: "ansible", desc: "IT 自动化运维工具",     icon: "fa-cog",        cls: "green" },
+  { name: "curl", desc: "命令行数据传输工具",        icon: "fa-exchange-alt", cls: "green" },
+  { name: "ssh", desc: "远程连接工具",              icon: "fa-terminal",   cls: "indigo" },
+  { name: "mysql", desc: "MySQL 命令行工具",        icon: "fa-database",   cls: "blue" },
+  { name: "redis-cli", desc: "Redis 命令行工具",    icon: "fa-database",   cls: "rose" },
+  { name: "conda", desc: "Python 环境管理器",       icon: "fa-flask",      cls: "green" },
+  { name: "pip", desc: "Python 包安装工具",         icon: "fa-flask",      cls: "blue" },
+  { name: "cargo", desc: "Rust 包管理器",          icon: "fa-cog",        cls: "amber" },
+  { name: "vercel", desc: "Vercel 部署工具",        icon: "fa-globe",      cls: "indigo" },
+];
+
+const cliModal = document.getElementById("cliModal");
+const cliList = document.getElementById("cliList");
+const cliSearch = document.getElementById("cliSearch");
+let cliTargetMgr = cwChipMgr;
+
+function cliRenderRows() {
+  const q = (cliSearch.value || "").trim().toLowerCase();
+  const filtered = CLI_TOOLS.filter(r => !q || r.name.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q));
+  if (!filtered.length) { cliList.innerHTML = '<div class="kb-empty">没有匹配的 CLI 工具</div>'; return; }
+  cliList.innerHTML = filtered.map(r => `<div class="kb-item" data-name="${r.name}">
+      <div class="kb-item-ic ${r.cls}"><i class="fas ${r.icon}"></i></div>
+      <div class="kb-item-info">
+        <div class="kb-item-name">${r.name}</div>
+        <div class="kb-item-meta">${r.desc}</div>
+      </div>
+    </div>`).join("");
+
+  cliList.querySelectorAll(".kb-item").forEach(el => {
+    el.addEventListener("click", () => cliPick(el.dataset.name));
+  });
+}
+
+function cliPick(name) {
+  cliTargetMgr.add("fa-terminal", name);
+  cliCloseModal();
+}
+
+function cliOpen(targetMgr) {
+  cliTargetMgr = targetMgr || cwChipMgr;
+  cliModal.classList.remove("hidden");
+  cliSearch.value = "";
+  cliRenderRows();
+  cliSearch.focus();
+}
+
+function cliCloseModal() { cliModal.classList.add("hidden"); }
+
+document.getElementById("cliClose").addEventListener("click", cliCloseModal);
+cliModal.addEventListener("click", e => { if (e.target === cliModal) cliCloseModal(); });
+cliSearch.addEventListener("input", cliRenderRows);
+
 // ══════════════════════════════════════════════════════════
 // 专家 Tab 输入框（由技能能力平移，去掉录屏，文案改为专家创建）
 // ══════════════════════════════════════════════════════════
@@ -1655,7 +1738,7 @@ kbSearch.addEventListener('input',()=>{
   document.getElementById('exAddLocal').addEventListener('click',()=>{ exDd.classList.remove('open'); document.getElementById('exLocalFile').click(); });
   document.getElementById('exLocalFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(f){ exChipMgr.add('fa-file', f.name); } e.target.value=''; });
   document.getElementById('exAddDoc').addEventListener('click',()=>{ exDd.classList.remove('open'); exChipMgr.add('fa-book-open','专家能力说明.docx'); });
-  document.getElementById('exAddCli').addEventListener('click',()=>{ exDd.classList.remove('open'); exChipMgr.add('fa-terminal','CLI'); });
+  document.getElementById('exAddCli').addEventListener('click',()=>{ exDd.classList.remove('open'); cliOpen(exChipMgr); });
   document.getElementById('exAddJoyclaw').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyclaw',exChipMgr); });
   document.getElementById('exAddJoyagent').addEventListener('click',()=>{ exDd.classList.remove('open'); kbOpen('joyagent',exChipMgr); });
 

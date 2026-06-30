@@ -43,6 +43,130 @@
     .ex-btn.danger:hover { background:var(--c-danger-soft); }
     .ex-btn.primary { background:var(--c-ink); color:#fff; border-color:var(--c-ink); }
     .ex-btn.primary:hover { opacity:.86; }
+/* -- 发布到 AI Hub 弹窗 -- */
+    .pub-mask { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:999; }
+    .pub-mask.open { display:flex; }
+    .pub-modal {
+      background:#fff; border-radius:16px; width:480px;
+      box-shadow:0 20px 60px rgba(0,0,0,.18);
+      overflow:hidden; display:flex; flex-direction:column;
+      animation:pubIn .25s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes pubIn { from{opacity:0;transform:scale(.96)translateY(12px)} to{opacity:1;transform:none} }
+    .pub-hd {
+      display:flex; align-items:center; gap:10px;
+      padding:16px 20px 14px; border-bottom:1px solid var(--c-border);
+    }
+    .pub-hd-icon {
+      width:32px; height:32px; border-radius:8px;
+      background:linear-gradient(135deg,#18181B,#3F3F46);
+      color:#fff; font-size:15px; display:flex; align-items:center; justify-content:center;
+    }
+    .pub-hd-title { font-size:16px; font-weight:700; color:var(--c-text); flex:1; }
+    .pub-close {
+      width:28px; height:28px; border-radius:7px; border:none;
+      background:transparent; color:var(--c-text-faint); font-size:14px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .pub-close:hover { background:var(--c-hover); color:var(--c-text); }
+    .pub-body { padding:20px 20px 0; overflow-y:auto; max-height:520px; }
+    .pub-preview {
+      background:var(--c-surface); border-radius:10px; padding:14px 16px; margin-bottom:20px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .pub-preview-icon {
+      width:40px; height:40px; border-radius:10px; flex-shrink:0;
+      background:linear-gradient(135deg,#f97316,#ef4444);
+      color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center;
+    }
+    .pub-preview-info { flex:1; min-width:0; }
+    .pub-preview-name { font-size:14px; font-weight:700; color:var(--c-text); margin-bottom:2px; }
+    .pub-preview-desc { font-size:12px; color:var(--c-text-sub); line-height:1.4; }
+    .pub-preview-version { font-size:11px; color:var(--c-text-mute); margin-top:3px; }
+    .pub-field { margin-bottom:18px; }
+    .pub-label { font-size:12.5px; font-weight:600; color:var(--c-text); margin-bottom:6px; display:flex; align-items:center; gap:4px; }
+    .pub-input {
+      width:100%; height:36px; border:1px solid var(--c-border); border-radius:8px;
+      padding:0 12px; font-size:13px; color:var(--c-text); font-family:inherit;
+      outline:none; transition:border-color .12s; box-sizing:border-box;
+    }
+    .pub-input:focus { border-color:#4F46E5; }
+    .pub-textarea {
+      width:100%; min-height:72px; border:1px solid var(--c-border); border-radius:8px;
+      padding:10px 12px; font-size:13px; color:var(--c-text); font-family:inherit;
+      outline:none; resize:vertical; line-height:1.5; box-sizing:border-box;
+      transition:border-color .12s;
+    }
+    .pub-textarea:focus { border-color:#4F46E5; }
+    .pub-textarea::placeholder { color:var(--c-text-faint); }
+    .vis-select-wrap { position:relative; }
+    .vis-select {
+      width:100%; height:36px; border:1px solid var(--c-border); border-radius:8px;
+      padding:0 32px 0 12px; font-size:13px; color:var(--c-text); font-family:inherit;
+      background:var(--c-surface); cursor:pointer; outline:none;
+      appearance:none; -webkit-appearance:none;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5L6 7.5L9 4.5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat:no-repeat; background-position:right 12px center;
+      transition:border-color .12s;
+    }
+    .vis-select:hover { border-color:#b8bfcf; }
+    .vis-select:focus { border-color:#4F46E5; }
+    .vis-dept-search {
+      display:flex; align-items:center; gap:8px;
+      background:var(--c-surface); border:1px solid var(--c-border); border-radius:8px;
+      padding:7px 10px; margin-top:10px;
+    }
+    .vis-dept-search i { color:var(--c-text-faint); font-size:12px; }
+    .vis-dept-search input {
+      border:none; outline:none; background:transparent;
+      font-size:12.5px; color:var(--c-text); flex:1;
+    }
+    .vis-dept-search input::placeholder { color:var(--c-text-faint); }
+    .vis-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .vis-chip {
+      display:inline-flex; align-items:center; gap:5px;
+      background:#EEF0FF; color:#4F46E5; border:1px solid #dfe3ff;
+      border-radius:6px; padding:4px 8px; font-size:12px; font-weight:500;
+    }
+    .vis-chip .chip-x { margin-left:2px; cursor:pointer; color:#9aa1c8; font-size:10px; }
+    .vis-chip .chip-x:hover { color:#4F46E5; }
+    .vis-chip-add {
+      display:inline-flex; align-items:center; gap:4px;
+      color:var(--c-text-sub); font-size:12px; cursor:pointer;
+      padding:4px 8px; border-radius:6px; transition:background .1s;
+    }
+    .vis-chip-add:hover { background:var(--c-hover); }
+    .vis-chip-add i { font-size:10px; color:var(--c-text-faint); }
+    .vis-erp-hint {
+      display:flex; align-items:center; gap:6px;
+      padding:10px 12px; background:var(--c-surface); border-radius:8px;
+      font-size:12px; color:var(--c-text-sub); margin-top:10px;
+    }
+    .vis-erp-hint i { color:var(--c-text-faint); font-size:12px; }
+    .pub-tags { display:flex; flex-wrap:wrap; gap:5px; }
+    .pub-tag {
+      display:inline-flex; align-items:center; gap:4px;
+      background:var(--c-tag-bg); color:var(--c-tag-text); border-radius:6px;
+      padding:4px 10px; font-size:11.5px; font-weight:500;
+    }
+    .pub-tag i { font-size:9px; color:var(--c-text-faint); }
+    .pub-ft {
+      display:flex; align-items:center; justify-content:flex-end; gap:8px;
+      padding:14px 20px; border-top:1px solid var(--c-border); margin-top:6px;
+    }
+    .pub-btn-cancel {
+      height:34px; padding:0 16px; border-radius:8px; border:1px solid var(--c-border);
+      background:var(--c-surface); color:var(--c-text-sub); font-size:13px; font-weight:500; cursor:pointer;
+      display:flex; align-items:center; gap:5px; transition:border-color .12s;
+    }
+    .pub-btn-cancel:hover { border-color:#b8bfcf; }
+    .pub-btn-primary {
+      height:34px; padding:0 18px; border-radius:8px; border:none;
+      background:var(--c-ink); color:#fff; font-size:13px; font-weight:600; cursor:pointer;
+      display:flex; align-items:center; gap:6px; transition:opacity .12s;
+    }
+    .pub-btn-primary:hover { opacity:.86; }
+    .pub-btn-primary:disabled { opacity:.5; cursor:default; }
   </style>
 </head>
 <body>
@@ -217,7 +341,7 @@
         </div>
         <div class="ex-actions">
           <button class="ex-btn">编辑</button>
-          <button class="ex-btn primary">发布</button>
+          <button class="ex-btn primary">发布到 AI Hub</button>
           <button class="ex-btn danger">删除</button>
         </div>
       </div>
@@ -256,5 +380,113 @@
     });
   });
 </script>
+
+<!-- 发布到 AI Hub 弹窗 -->
+<div class="pub-mask" id="publishMask">
+  <div class="pub-modal">
+    <div class="pub-hd">
+      <div class="pub-hd-icon"><i class="fas fa-rocket"></i></div>
+      <span class="pub-hd-title">发布到 AI Hub</span>
+      <button class="pub-close" id="pubClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="pub-body">
+      <div class="pub-preview">
+        <div class="pub-preview-icon" id="pubCardIcon"><i class="fas fa-rocket"></i></div>
+        <div class="pub-preview-info">
+          <div class="pub-preview-name" id="pubCardName">&mdash;</div>
+          <div class="pub-preview-desc" id="pubCardDesc">&mdash;</div>
+          <div class="pub-preview-version" id="pubCardVer">v1.0.0</div>
+        </div>
+      </div>
+      <div class="pub-field">
+        <div class="pub-label">版本号</div>
+        <input class="pub-input" id="pubVersion" value="v1.0.0" placeholder="v1.0.0"/>
+      </div>
+      <div class="pub-field">
+        <div class="pub-label">发布说明</div>
+        <textarea class="pub-textarea" id="pubNotes" placeholder="描述此版本的新特性、功能改进或修复内容"></textarea>
+      </div>
+      <div class="pub-field">
+        <div class="pub-label"><i class="fas fa-globe" style="font-size:11px;color:var(--c-text-faint)"></i> 可见范围</div>
+        <div class="vis-select-wrap">
+          <select class="vis-select" id="visScope">
+            <option value="all">全公司</option>
+            <option value="dept">指定部门</option>
+            <option value="erp">ERP 控制</option>
+          </select>
+        </div>
+        <!-- 部门选择（选择"指定部门"时显示） -->
+        <div class="vis-dept-wrap" id="visDeptWrap" style="display:none;margin-top:0">
+          <div class="vis-dept-search">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="搜索部门..."/>
+          </div>
+          <div class="vis-chips">
+            <span class="vis-chip"><i class="fas fa-building" style="font-size:10px"></i> 研发中心 <i class="fas fa-times chip-x"></i></span>
+            <span class="vis-chip"><i class="fas fa-building" style="font-size:10px"></i> 产品部 <i class="fas fa-times chip-x"></i></span>
+            <span class="vis-chip-add"><i class="fas fa-plus"></i> 添加部门</span>
+          </div>
+        </div>
+        <!-- ERP 控制（选择"ERP 控制"时显示） -->
+        <div class="vis-erp-wrap" id="visErpWrap" style="display:none;margin-top:0">
+          <div class="vis-erp-hint"><i class="fas fa-info-circle"></i> 可见范围由 ERP 系统角色权限控制</div>
+        </div>
+      </div>
+      <div class="pub-field">
+        <div class="pub-label">分类标签</div>
+        <div class="pub-tags" id="pubTags">
+          <span class="pub-tag"><i class="fas fa-tag"></i> 通用</span>
+        </div>
+      </div>
+    </div>
+    <div class="pub-ft">
+      <button class="pub-btn-cancel" id="pubCancel">取消</button>
+      <button class="pub-btn-primary" id="pubConfirm"><i class="fas fa-rocket"></i> 发布到 AI Hub</button>
+    </div>
+  </div>
+</div>
+
+
+  <script>
+  // 发布到 AI Hub 弹窗
+  document.querySelectorAll('.ex-btn.primary').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var card = btn.closest('.ex-card');
+      if (!card) return;
+      var icon = card.querySelector('.ui-glyph i');
+      var nameEl = card.querySelector('.ex-name');
+      var descEl = card.querySelector('.ex-desc');
+      var verEl = card.querySelector('.ex-ver');
+      if (icon) document.getElementById('pubCardIcon').innerHTML = icon.outerHTML;
+      document.getElementById('pubCardName').textContent = nameEl ? nameEl.textContent.trim() : '--';
+      document.getElementById('pubCardDesc').textContent = descEl ? descEl.textContent.trim() : '--';
+      document.getElementById('pubCardVer').textContent = verEl ? verEl.textContent.trim() : 'v1.0.0';
+      document.getElementById('publishMask').classList.add('open');
+    });
+  });
+  function pubCloseModal() { document.getElementById('publishMask').classList.remove('open'); }
+  document.getElementById('pubClose').addEventListener('click', pubCloseModal);
+  document.getElementById('pubCancel').addEventListener('click', pubCloseModal);
+  document.getElementById('publishMask').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('publishMask')) pubCloseModal();
+  });
+  document.getElementById('visScope').addEventListener('change', function() {
+    var val = this.value;
+    document.getElementById('visDeptWrap').style.display = val === 'dept' ? '' : 'none';
+    document.getElementById('visErpWrap').style.display = val === 'erp' ? '' : 'none';
+  });
+  document.getElementById('pubConfirm').addEventListener('click', function() {
+    var btn = document.getElementById('pubConfirm');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 发布中';
+    setTimeout(function() {
+      pubCloseModal();
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-rocket"></i> 发布到 AI Hub';
+    }, 1200);
+  });
+  </script>
+
 </body>
 </html>
