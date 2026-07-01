@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/jiashilin1/Documents/Claude/aibuilder && git add -A && git diff --cached --quiet || git commit -m \"Auto-commit: update $(jq -r '.tool_input.file_path // empty' | xargs -I{} basename {} 2>/dev/null || echo 'files')\"",
+            "statusMessage": "Auto-committing changes..."
+          }
+        ]
+      }
+    ]
+  }
+}
